@@ -4,10 +4,19 @@ import {
   Text,
   StyleSheet,
   Platform,
-  TouchableOpacity
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Switch
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker, Callout, Circle, Polyline } from "react-native-maps";
+import MapView, {
+  Marker,
+  Callout,
+  Circle,
+  Polyline,
+  Heatmap
+} from "react-native-maps";
 
 // Ajuste os caminhos conforme a sua estrutura de pastas
 import { useEmergency } from "../../contexts/EmergencyContext";
@@ -17,12 +26,13 @@ import Typography from "../../constants/Typography";
 import GlobalStyles from "../../constants/GlobalStyles";
 import Icon from "../../components/Icon";
 import MapMarker from "../../components/MapMarker";
+import StyledButton from "../../components/StyledButton";
 
 const theme = Colors.light;
 const DANGER_RADIUS_METERS = 500;
 
 // Lista de pontos de interesse FIXOS e PRÓXIMOS da simulação para a demo
-const mockPoints = [
+const INITIAL_MOCK_POINTS = [
   {
     id: "safe_point_1",
     type: "safe",
@@ -46,6 +56,19 @@ const mockPoints = [
   }
 ];
 
+// Dados simulados para o Mapa de Calor
+const HEATMAP_POINTS = [
+  { latitude: -15.78, longitude: -47.929, weight: 10 },
+  { latitude: -15.781, longitude: -47.928, weight: 8 },
+  { latitude: -15.779, longitude: -47.927, weight: 5 },
+  { latitude: -15.782, longitude: -47.93, weight: 7 },
+  { latitude: -15.778, longitude: -47.931, weight: 15 },
+  { latitude: -15.7785, longitude: -47.9315, weight: 12 },
+  { latitude: -15.779, longitude: -47.93, weight: 9 },
+  { latitude: -15.79, longitude: -47.925, weight: 3 },
+  { latitude: -15.775, longitude: -47.92, weight: 2 }
+];
+
 export default function MapScreen() {
   const {
     currentLocation,
@@ -60,50 +83,74 @@ export default function MapScreen() {
 
   const mapRef = useRef(null);
 
-  // NOVO: Estado para controlar o tipo do mapa
-  const [mapType, setMapType] = useState("standard"); // 'standard' ou 'satellite'
+  const [points, setPoints] = useState(INITIAL_MOCK_POINTS);
+  const [isAddingPoint, setIsAddingPoint] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newPointData, setNewPointData] = useState({
+    coordinate: null,
+    type: "risk",
+    title: "",
+    description: ""
+  });
+  const [mapType, setMapType] = useState("standard");
+  const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
 
-  // NOVO: Função para alternar o tipo do mapa
   const toggleMapType = () => {
     setMapType((prevType) =>
       prevType === "standard" ? "satellite" : "standard"
     );
   };
 
-  // useEffect para controlar a câmera do mapa
+  const toggleHeatmapVisibility = () => setIsHeatmapVisible((prev) => !prev);
+
+  const handleMapPress = (event) => {
+    if (!isAddingPoint) return;
+    const { coordinate } = event.nativeEvent;
+    setNewPointData({ ...newPointData, coordinate });
+    setModalVisible(true);
+    setIsAddingPoint(false);
+  };
+
+  const handleSaveNewPoint = () => {
+    if (!newPointData.title || !newPointData.coordinate) {
+      alert("Por favor, preencha o título do ponto.");
+      return;
+    }
+    const newPoint = {
+      ...newPointData,
+      id: `user_point_${Date.now()}`
+    };
+    setPoints((prevPoints) => [...prevPoints, newPoint]);
+    setModalVisible(false);
+    setNewPointData({
+      coordinate: null,
+      type: "risk",
+      title: "",
+      description: ""
+    });
+  };
+
   useEffect(() => {
     if (!mapRef.current || !currentLocation || !simulatedAggressor?.location) {
       return;
     }
-
-    // Se a simulação está pausada ou no início (sem alerta), enquadra a cena
     if (!isSimulationRunning || !proximityAlert.isActive) {
       mapRef.current.fitToCoordinates(
         [currentLocation, simulatedAggressor.location],
         {
-          edgePadding: {
-            top: 150,
-            right: 80,
-            bottom: 200,
-            left: 80 // Mais padding embaixo para legenda/controles
-          },
+          edgePadding: { top: 150, right: 80, bottom: 200, left: 80 },
           animated: true
         }
       );
     } else if (proximityAlert.isActive) {
-      // Se a simulação está rodando E um alerta está ativo (fuga), segue a mulher
       mapRef.current.animateToRegion(
-        {
-          ...currentLocation,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01
-        },
+        { ...currentLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 },
         500
-      ); // Animação suave para seguir
+      );
     }
   }, [
     currentLocation,
-    simulatedAggressor.location,
+    simulatedAggressor?.location,
     isSimulationRunning,
     proximityAlert.isActive
   ]);
@@ -123,10 +170,25 @@ export default function MapScreen() {
         }}
         showsUserLocation={false}
         showsMyLocationButton={false}
-        mapPadding={{ bottom: 90 }} // Garante que a legenda não cubra logos do Google Maps
+        mapPadding={{ bottom: 90 }}
         mapType={mapType}
+        onPress={handleMapPress}
       >
-        {/* Círculo de Proximidade (Verde/Vermelho) */}
+        {/* Camada de Mapa de Calor */}
+        {isHeatmapVisible && (
+          <Heatmap
+            points={HEATMAP_POINTS}
+            opacity={0.7}
+            radius={50}
+            gradient={{
+              colors: ["#79f279", "#f2f279", "#f27979"], // Verde, Amarelo, Vermelho
+              startPoints: [0.05, 0.4, 1.0],
+              colorMapSize: 256
+            }}
+          />
+        )}
+
+        {/* Círculo de Proximidade */}
         {currentLocation && (
           <Circle
             center={currentLocation}
@@ -142,7 +204,7 @@ export default function MapScreen() {
           />
         )}
 
-        {/* Rota de Fuga Inteligente */}
+        {/* Rota de Fuga */}
         {escapeRoute && (
           <Polyline
             coordinates={escapeRoute}
@@ -152,12 +214,12 @@ export default function MapScreen() {
           />
         )}
 
-        {/* Pontos de Interesse Fixos */}
-        {mockPoints.map((point) => (
+        {/* Pontos de Interesse */}
+        {points.map((point) => (
           <MapMarker key={point.id} pointData={point} />
         ))}
 
-        {/* Marcador do Agressor */}
+        {/* Marcadores e Destino da Rota */}
         {simulatedAggressor?.location && (
           <Marker
             key={simulatedAggressor.id}
@@ -179,8 +241,6 @@ export default function MapScreen() {
             </Callout>
           </Marker>
         )}
-
-        {/* Marcador da Mulher Simulada */}
         {currentLocation && (
           <Marker coordinate={currentLocation} zIndex={200}>
             <Icon
@@ -190,12 +250,10 @@ export default function MapScreen() {
               style={styles.userIcon}
             />
             <Callout>
-              <Text style={styles.calloutTitle}>Você (Simulado)</Text>
+              <Text style={styles.calloutTitle}>Você</Text>
             </Callout>
           </Marker>
         )}
-
-        {/* Ponto Seguro de Destino da Rota */}
         {escapeRoute && (
           <Marker coordinate={escapeRoute[1]} zIndex={190}>
             <Icon
@@ -210,39 +268,70 @@ export default function MapScreen() {
         )}
       </MapView>
 
-      {/* Controles da Simulação */}
-      <View style={styles.simulationControls}>
-        <TouchableOpacity
-          onPress={isSimulationRunning ? pauseSimulation : resumeSimulation}
-          style={styles.controlButton}
-        >
-          <Icon
-            name={isSimulationRunning ? "pause-circle" : "play-circle"}
-            size={Layout.iconSize.l + 10}
-            color={theme.primary}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={resetSimulation}
-          style={styles.controlButton}
-        >
-          <Icon
-            name="refresh-circle"
-            size={Layout.iconSize.l + 10}
-            color={theme.mediumGrey}
-          />
-        </TouchableOpacity>
+      {/* Controles do Mapa e Simulação */}
+      <View style={styles.mapControlsContainer}>
+        <View style={styles.simulationControls}>
+          <TouchableOpacity
+            onPress={isSimulationRunning ? pauseSimulation : resumeSimulation}
+            style={styles.controlButton}
+          >
+            <Icon
+              name={isSimulationRunning ? "pause-circle" : "play-circle"}
+              size={Layout.iconSize.l + 10}
+              color={theme.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={resetSimulation}
+            style={styles.controlButton}
+          >
+            <Icon
+              name="refresh-circle"
+              size={Layout.iconSize.l + 10}
+              color={theme.mediumGrey}
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.mapActionControls}>
+          <TouchableOpacity
+            onPress={toggleMapType}
+            style={styles.controlButton}
+          >
+            <Icon
+              name="globe-outline"
+              size={Layout.iconSize.l}
+              color={theme.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setIsAddingPoint(true)}
+            style={[
+              styles.controlButton,
+              isAddingPoint && styles.controlButtonActive
+            ]}
+          >
+            <Icon
+              name="add-circle-outline"
+              size={Layout.iconSize.l}
+              color={isAddingPoint ? theme.white : theme.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={toggleHeatmapVisibility}
+            style={[
+              styles.controlButton,
+              isHeatmapVisible && styles.controlButtonActive
+            ]}
+          >
+            <Icon
+              name="flame-outline"
+              size={Layout.iconSize.l}
+              color={isHeatmapVisible ? theme.white : theme.primary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <TouchableOpacity onPress={toggleMapType} style={styles.mapTypeButton}>
-        <Icon
-          name="globe-outline"
-          size={Layout.iconSize.l}
-          color={theme.primary}
-        />
-      </TouchableOpacity>
-
-      {/* Legenda Corrigida e Completa */}
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <Icon
@@ -277,6 +366,84 @@ export default function MapScreen() {
           <Text style={styles.legendText}>Agressor</Text>
         </View>
       </View>
+
+      {/* Modal para Adicionar Ponto */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Adicionar Novo Ponto</Text>
+            <TextInput
+              style={GlobalStyles.input}
+              placeholder="Título do Ponto"
+              value={newPointData.title}
+              onChangeText={(text) =>
+                setNewPointData((prev) => ({ ...prev, title: text }))
+              }
+            />
+            <TextInput
+              style={[GlobalStyles.input, { height: 80 }]}
+              placeholder="Descrição (opcional)"
+              multiline
+              value={newPointData.description}
+              onChangeText={(text) =>
+                setNewPointData((prev) => ({ ...prev, description: text }))
+              }
+            />
+            <View style={styles.switchContainer}>
+              <Text
+                style={[
+                  styles.switchLabel,
+                  {
+                    color:
+                      newPointData.type === "risk"
+                        ? theme.danger
+                        : theme.mediumGrey
+                  }
+                ]}
+              >
+                Risco
+              </Text>
+              <Switch
+                trackColor={{ false: theme.danger, true: theme.success }}
+                thumbColor={theme.white}
+                onValueChange={() =>
+                  setNewPointData((prev) => ({
+                    ...prev,
+                    type: prev.type === "risk" ? "safe" : "risk"
+                  }))
+                }
+                value={newPointData.type === "safe"}
+              />
+              <Text
+                style={[
+                  styles.switchLabel,
+                  {
+                    color:
+                      newPointData.type === "safe"
+                        ? theme.success
+                        : theme.mediumGrey
+                  }
+                ]}
+              >
+                Seguro
+              </Text>
+            </View>
+            <StyledButton
+              title="Salvar Ponto"
+              onPress={handleSaveNewPoint}
+              fullWidth
+            />
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -298,34 +465,29 @@ const styles = StyleSheet.create({
     padding: 4
   },
   calloutView: { padding: 8 },
-  calloutTitle: {
-    fontFamily: Typography.fontFamilyBold,
-    fontSize: 14
-  },
+  calloutTitle: { fontFamily: Typography.fontFamilyBold, fontSize: 14 },
+  calloutDescription: { ...Typography.caption, color: theme.mediumGrey },
   legendContainer: {
     position: "absolute",
-    bottom: 10,
+    bottom: 16,
     left: 16,
     right: 16,
     backgroundColor: "rgba(255,255,255,0.95)",
     padding: 8,
     borderRadius: 8,
     flexDirection: "row",
-    justifyContent: "space-around"
-  },
-  legendItem: {
-    flexDirection: "row",
+    justifyContent: "space-around",
     alignItems: "center"
   },
-  legendText: {
-    ...Typography.caption,
-    marginLeft: 4,
-    fontSize: 10
+  legendItem: { flexDirection: "row", alignItems: "center" },
+  legendText: { ...Typography.caption, marginLeft: 4, fontSize: 10 },
+  mapControlsContainer: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 20,
+    right: 16,
+    alignItems: "flex-end"
   },
   simulationControls: {
-    position: "absolute",
-    top: 60,
-    right: 16,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 25,
     padding: 4,
@@ -337,20 +499,42 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84
   },
-  controlButton: {
-    padding: 6
-  },
-  mapTypeButton: {
-    position: "absolute",
-    top: 60,
-    left: 16,
+  mapActionControls: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 25,
-    padding: 8,
+    padding: 4,
+    flexDirection: "row",
+    alignItems: "center",
     elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84
-  }
+    marginTop: Layout.spacing.s
+  },
+  controlButton: { padding: 8 },
+  controlButtonActive: { backgroundColor: theme.tint, borderRadius: 50 },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)"
+  },
+  modalView: {
+    width: "90%",
+    maxWidth: 400,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 25,
+    alignItems: "center",
+    elevation: 5
+  },
+  modalTitle: { ...Typography.h4, marginBottom: 15 },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20
+  },
+  switchLabel: {
+    ...Typography.body1,
+    fontFamily: Typography.fontFamilyBold,
+    marginHorizontal: 10
+  },
+  cancelText: { color: theme.mediumGrey, marginTop: 15, padding: 5 }
 });
