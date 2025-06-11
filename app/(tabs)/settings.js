@@ -162,7 +162,7 @@ export default function SettingsScreen() {
             </View>
           )}
 
-          {emergencyContacts.length === 0 && !isAdding ? (
+          {emergencyContacts?.length === 0 && !isAdding ? (
             <Text style={styles.emptyListText}>
               Nenhum contato adicionado. Adicione para serem notificados em uma
               emergência.

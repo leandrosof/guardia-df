@@ -104,7 +104,7 @@ export default function TabLayout() {
           fontSize: 11,
           fontWeight: "500"
         },
-        headerShown: true, // O header é mostrado e customizado pelo useEffect acima
+        headerShown: false, // O header é mostrado e customizado pelo useEffect acima
         headerTitleAlign: "center" // Default, mas pode ser sobrescrito pelo headerTitle customizado
         // As opções de header (style, tintColor, title) são definidas dinamicamente pelo useEffect
       })}

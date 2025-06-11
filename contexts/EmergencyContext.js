@@ -5,13 +5,12 @@ import Colors from "../constants/Colors";
 
 const theme = Colors.light;
 
-// --- CONSTANTES DA SIMULAÇÃO ---
 const DANGER_RADIUS_METERS = 500;
 const SIMULATION_INTERVAL_MS = 3000;
-const AGGRESSOR_STEP_METERS = 70;
-const USER_ESCAPE_STEP_METERS = 90;
+const AGGRESSOR_STEP_METERS = 15;
+const USER_ESCAPE_STEP_METERS = 30;
 const SAFE_POINT_REACHED_THRESHOLD = 50;
-const MIN_DISTANCE_TO_USER_METERS = 200; // Conforme seu ajuste!
+const MIN_DISTANCE_TO_USER_METERS = 200;
 
 const SIMULATED_INITIAL_USER_LOCATION = {
   latitude: -15.780148,
@@ -22,10 +21,19 @@ const INITIAL_AGGRESSOR_STATE = {
   id: "agressor001",
   name: "Ag. Simul. Perseguidor",
   location: {
-    latitude: SIMULATED_INITIAL_USER_LOCATION.latitude + 0.008,
-    longitude: SIMULATED_INITIAL_USER_LOCATION.longitude + 0.008
+    latitude: SIMULATED_INITIAL_USER_LOCATION.latitude + 0.004,
+    longitude: SIMULATED_INITIAL_USER_LOCATION.longitude + 0.004
   }
 };
+
+// Pontos seguros usados pelo contexto para calcular a rota de fuga mais próxima
+const MOCK_SAFE_POINTS_FOR_ROUTE = [
+  {
+    id: "safe_point_1",
+    coordinate: { latitude: -15.7815, longitude: -47.9305 }
+  },
+  { id: "safe_point_2", coordinate: { latitude: -15.779, longitude: -47.9275 } }
+];
 
 function getDistanceBetweenCoordinates(coord1, coord2) {
   if (!coord1 || !coord2) return Infinity;
@@ -59,43 +67,32 @@ export const EmergencyProvider = ({ children }) => {
     aggressor: null
   });
   const [escapeRoute, setEscapeRoute] = useState(null);
-  // NOVO ESTADO para controlar o comportamento do agressor
-  const [aggressorBehavior, setAggressorBehavior] = useState("pursuing"); // pode ser 'pursuing', 'fleeing' ou 'idle'
-
-  // ... (outros estados e useEffects de AppState e Shake mantidos)
+  const [aggressorBehavior, setAggressorBehavior] = useState("pursuing");
+  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
-  // ...
+
+  const pauseSimulation = () => setIsSimulationRunning(false);
+  const resumeSimulation = () => setIsSimulationRunning(true);
 
   const resetSimulation = () => {
-    console.log("[SIMULAÇÃO] Resetando posições e comportamento.");
-    setCurrentLocation(SIMULATED_INITIAL_USER_LOCATION);
-    setSimulatedAggressor(JSON.parse(JSON.stringify(INITIAL_AGGRESSOR_STATE)));
+    setIsSimulationRunning(false);
+    setAggressorBehavior("pursuing");
     setProximityAlert({ isActive: false, aggressor: null });
     setEscapeRoute(null);
-    setAggressorBehavior("pursuing"); // Reseta o comportamento para 'perseguindo'
-    Alert.alert(
-      "Simulação Resetada",
-      "A posição da usuária e do agressor foram restauradas."
-    );
+    setSimulatedAggressor(JSON.parse(JSON.stringify(INITIAL_AGGRESSOR_STATE)));
+    setCurrentLocation(SIMULATED_INITIAL_USER_LOCATION);
+    Alert.alert("Simulação Resetada");
   };
 
-  // O useEffect principal que controla a simulação
   useEffect(() => {
-    if (isEmergencyActive) return;
+    if (isEmergencyActive || !isSimulationRunning) {
+      return;
+    }
 
     const intervalId = setInterval(() => {
-      let newAggressorLocation = { ...simulatedAggressor.location };
-      let newUserLocation = { ...currentLocation };
-      let newEscapeRoute = escapeRoute;
-      let newProximityAlert = { ...proximityAlert };
-      let newAggressorBehavior = aggressorBehavior;
+      let nextUserLocation = { ...currentLocation };
+      let nextAggressor = { ...simulatedAggressor };
 
-      const distanceToUser = getDistanceBetweenCoordinates(
-        currentLocation,
-        simulatedAggressor.location
-      );
-
-      // --- LÓGICA DE FUGA DA MULHER (se o alerta de proximidade estiver ativo) ---
       if (proximityAlert.isActive && escapeRoute) {
         const escapeDestination = escapeRoute[1];
         const distanceToSafety = getDistanceBetweenCoordinates(
@@ -104,19 +101,11 @@ export const EmergencyProvider = ({ children }) => {
         );
 
         if (distanceToSafety <= SAFE_POINT_REACHED_THRESHOLD) {
-          // CHEGOU AO PONTO SEGURO!
-          console.log(
-            "[SIMULAÇÃO] Usuária alcançou o ponto seguro! Alerta finalizado."
-          );
-          Alert.alert(
-            "Você está em Segurança!",
-            "Você alcançou um ponto de apoio próximo. A ameaça foi neutralizada."
-          );
-          newProximityAlert = { isActive: false, aggressor: null };
-          newEscapeRoute = null;
-          newAggressorBehavior = "fleeing"; // NOVO: Manda o agressor recuar
+          Alert.alert("Você está em Segurança!", "A ameaça foi neutralizada.");
+          setProximityAlert({ isActive: false, aggressor: null });
+          setEscapeRoute(null);
+          setAggressorBehavior("fleeing"); // Comportamento do agressor muda para "recuando"
         } else {
-          // Continua movendo a mulher na rota de fuga
           const latDiff = escapeDestination.latitude - currentLocation.latitude;
           const lonDiff =
             escapeDestination.longitude - currentLocation.longitude;
@@ -129,7 +118,7 @@ export const EmergencyProvider = ({ children }) => {
               (USER_ESCAPE_STEP_METERS /
                 (111000 *
                   Math.cos((currentLocation.latitude * Math.PI) / 180)));
-            newUserLocation = {
+            nextUserLocation = {
               latitude: currentLocation.latitude + stepLat,
               longitude: currentLocation.longitude + stepLon
             };
@@ -137,19 +126,16 @@ export const EmergencyProvider = ({ children }) => {
         }
       }
 
-      // --- LÓGICA DE MOVIMENTO DO AGRESSOR (baseada no comportamento) ---
-      if (newAggressorBehavior === "pursuing") {
-        // Move em direção à mulher
-        const aggressorTarget = newUserLocation; // Persegue a posição atual ou futura da mulher
-        const aggDistanceToTarget = getDistanceBetweenCoordinates(
-          aggressorTarget,
-          newAggressorLocation
+      if (aggressorBehavior === "pursuing") {
+        const distanceToUser = getDistanceBetweenCoordinates(
+          nextUserLocation,
+          nextAggressor.location
         );
-        if (aggDistanceToTarget > MIN_DISTANCE_TO_USER_METERS) {
+        if (distanceToUser > MIN_DISTANCE_TO_USER_METERS) {
           const latDiff =
-            aggressorTarget.latitude - newAggressorLocation.latitude;
+            nextUserLocation.latitude - nextAggressor.location.latitude;
           const lonDiff =
-            aggressorTarget.longitude - newAggressorLocation.longitude;
+            nextUserLocation.longitude - nextAggressor.location.longitude;
           const magnitude = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
           if (magnitude > 0) {
             const stepLat =
@@ -158,19 +144,18 @@ export const EmergencyProvider = ({ children }) => {
               (lonDiff / magnitude) *
               (AGGRESSOR_STEP_METERS /
                 (111000 *
-                  Math.cos((aggressorTarget.latitude * Math.PI) / 180)));
-            newAggressorLocation = {
-              latitude: newAggressorLocation.latitude + stepLat,
-              longitude: newAggressorLocation.longitude + stepLon
+                  Math.cos((nextUserLocation.latitude * Math.PI) / 180)));
+            nextAggressor.location = {
+              latitude: nextAggressor.location.latitude + stepLat,
+              longitude: nextAggressor.location.longitude + stepLon
             };
           }
         }
-      } else if (newAggressorBehavior === "fleeing") {
-        // NOVO: Move na direção OPOSTA à mulher
+      } else if (aggressorBehavior === "fleeing") {
         const latDiff =
-          newAggressorLocation.latitude - newUserLocation.latitude;
+          nextAggressor.location.latitude - nextUserLocation.latitude;
         const lonDiff =
-          newAggressorLocation.longitude - newUserLocation.longitude;
+          nextAggressor.location.longitude - nextUserLocation.longitude;
         const magnitude = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
         if (magnitude > 0) {
           const stepLat =
@@ -178,71 +163,80 @@ export const EmergencyProvider = ({ children }) => {
           const stepLon =
             (lonDiff / magnitude) *
             (AGGRESSOR_STEP_METERS /
-              (111000 * Math.cos((newUserLocation.latitude * Math.PI) / 180)));
-          newAggressorLocation = {
-            latitude: newAggressorLocation.latitude + stepLat,
-            longitude: newAggressorLocation.longitude + stepLon
+              (111000 * Math.cos((nextUserLocation.latitude * Math.PI) / 180)));
+          nextAggressor.location = {
+            latitude: nextAggressor.location.latitude + stepLat,
+            longitude: nextAggressor.location.longitude + stepLon
           };
         }
       }
 
-      // --- LÓGICA PARA ATIVAR O ALERTA (se ainda não estiver ativo) ---
-      if (!proximityAlert.isActive && distanceToUser < DANGER_RADIUS_METERS) {
-        console.warn(
-          `[CONTEXT] ALERTA DE PROXIMIDADE ATIVADO! Agressor a ${distanceToUser.toFixed(
-            0
-          )}m.`
-        );
+      const finalDistanceToUser = getDistanceBetweenCoordinates(
+        nextUserLocation,
+        nextAggressor.location
+      );
+      if (
+        !proximityAlert.isActive &&
+        finalDistanceToUser < DANGER_RADIUS_METERS
+      ) {
         Alert.alert(
           "ALERTA DE PROXIMIDADE!",
-          `Agressor detectado a ${distanceToUser.toFixed(0)}m.`
+          `Agressor detectado a ${finalDistanceToUser.toFixed(0)}m.`
         );
-        newProximityAlert = {
+        setProximityAlert({
           isActive: true,
-          aggressor: { ...simulatedAggressor, distance: distanceToUser }
-        };
-        // Calcula a rota de fuga pela primeira vez
-        const latDiffFromAggressor =
-          currentLocation.latitude - newAggressorLocation.latitude;
-        const lonDiffFromAggressor =
-          currentLocation.longitude - newAggressorLocation.longitude;
-        const safePointDestination = {
-          latitude: currentLocation.latitude + latDiffFromAggressor * 2.0, // Aumentei o multiplicador para um ponto de fuga mais distante
-          longitude: currentLocation.longitude + lonDiffFromAggressor * 2.0
-        };
-        newEscapeRoute = [currentLocation, safePointDestination];
+          aggressor: { ...nextAggressor, distance: finalDistanceToUser }
+        });
+
+        let closestSafePoint = null;
+        let minDistance = Infinity;
+        MOCK_SAFE_POINTS_FOR_ROUTE.forEach((point) => {
+          const distance = getDistanceBetweenCoordinates(
+            nextUserLocation,
+            point.coordinate
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestSafePoint = point;
+          }
+        });
+        if (closestSafePoint) {
+          setEscapeRoute([nextUserLocation, closestSafePoint.coordinate]);
+        }
+      } else if (proximityAlert.isActive) {
+        setProximityAlert((prev) => ({
+          ...prev,
+          aggressor: { ...prev.aggressor, distance: finalDistanceToUser }
+        }));
       }
 
-      // Atualiza todos os estados de uma vez no final do ciclo
-      setCurrentLocation(newUserLocation);
-      setSimulatedAggressor({
-        ...simulatedAggressor,
-        location: newAggressorLocation
-      });
-      setProximityAlert(newProximityAlert);
-      setEscapeRoute(newEscapeRoute);
-      setAggressorBehavior(newAggressorBehavior);
+      setCurrentLocation(nextUserLocation);
+      setSimulatedAggressor(nextAggressor);
     }, SIMULATION_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
   }, [
+    isEmergencyActive,
+    isSimulationRunning,
     currentLocation,
     simulatedAggressor,
     proximityAlert,
     escapeRoute,
-    aggressorBehavior,
-    isEmergencyActive
+    aggressorBehavior
   ]);
 
   return (
     <EmergencyContext.Provider
       value={{
+        isEmergencyActive,
         currentLocation,
         simulatedAggressor,
         proximityAlert,
         escapeRoute,
+        isSimulationRunning,
+        pauseSimulation,
+        resumeSimulation,
         resetSimulation
-        // ...outras funções como triggerEmergency, etc. que você possa ter.
       }}
     >
       {children}
