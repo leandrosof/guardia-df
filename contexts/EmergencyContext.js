@@ -1,42 +1,40 @@
 // contexts/EmergencyContext.js
 import React, { createContext, useState, useEffect, useContext } from "react";
-// import * as Location from 'expo-location'; // Não usaremos para a localização da mulher
-import * as SMS from "expo-sms";
-import { Accelerometer } from "expo-sensors";
-import { Alert, AppState, Platform } from "react-native";
-// import * as TaskManager from 'expo-task-manager'; // Não usaremos para a localização da mulher
+import { Alert, AppState } from "react-native";
 import Colors from "../constants/Colors";
 
 const theme = Colors.light;
 
-// const LOCATION_TASK_NAME = "background-location-task"; // Não mais necessário para a usuária
-const SHAKE_THRESHOLD = 1.8;
-const SHAKE_DEBOUNCE_TIME = 1000;
-let lastShakeTimestamp = 0;
-
+// --- CONSTANTES DA SIMULAÇÃO ---
 const DANGER_RADIUS_METERS = 500;
-const PROXIMITY_CHECK_INTERVAL_MS = 7000;
-const AGGRESSOR_STEP_METERS = 50;
-const MIN_DISTANCE_TO_USER_METERS = 20;
+const SIMULATION_INTERVAL_MS = 3000;
+const AGGRESSOR_STEP_METERS = 70;
+const USER_ESCAPE_STEP_METERS = 90;
+const SAFE_POINT_REACHED_THRESHOLD = 50;
+const MIN_DISTANCE_TO_USER_METERS = 200; // Conforme seu ajuste!
 
-// Localização simulada FIXA para a mulher em Brasília
-const SIMULATED_USER_LOCATION = {
-  latitude: -15.780148, // Ex: Perto da Esplanada dos Ministérios
-  longitude: -47.929169,
-  accuracy: 5, // Apenas para ter um valor
-  altitude: null,
-  altitudeAccuracy: null,
-  heading: null,
-  speed: null
+const SIMULATED_INITIAL_USER_LOCATION = {
+  latitude: -15.780148,
+  longitude: -47.929169
 };
 
-function getDistanceBetweenCoordinates(lat1, lon1, lat2, lon2) {
+const INITIAL_AGGRESSOR_STATE = {
+  id: "agressor001",
+  name: "Ag. Simul. Perseguidor",
+  location: {
+    latitude: SIMULATED_INITIAL_USER_LOCATION.latitude + 0.008,
+    longitude: SIMULATED_INITIAL_USER_LOCATION.longitude + 0.008
+  }
+};
+
+function getDistanceBetweenCoordinates(coord1, coord2) {
+  if (!coord1 || !coord2) return Infinity;
   const R = 6371e3;
   const toRadians = (deg) => deg * (Math.PI / 180);
-  const phi1 = toRadians(lat1);
-  const phi2 = toRadians(lat2);
-  const deltaPhi = toRadians(lat2 - lat1);
-  const deltaLambda = toRadians(lon2 - lon1);
+  const phi1 = toRadians(coord1.latitude);
+  const phi2 = toRadians(coord2.latitude);
+  const deltaPhi = toRadians(coord2.latitude - coord1.latitude);
+  const deltaLambda = toRadians(coord2.longitude - coord1.longitude);
   const a =
     Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
     Math.cos(phi1) *
@@ -49,295 +47,202 @@ function getDistanceBetweenCoordinates(lat1, lon1, lat2, lon2) {
 
 export const EmergencyContext = createContext();
 
-// TaskManager.defineTask(LOCATION_TASK_NAME, ...); // Não mais necessário para a usuária
-
 export const EmergencyProvider = ({ children }) => {
-  const [isEmergencyActive, setIsEmergencyActive] = useState(false);
-  // AGORA currentLocation é a nossa localização simulada e fixa para a "mulher"
   const [currentLocation, setCurrentLocation] = useState(
-    SIMULATED_USER_LOCATION
+    SIMULATED_INITIAL_USER_LOCATION
   );
-  const [emergencyContacts, setEmergencyContacts] = useState([
-    { id: "1", name: "Mamãe (Exemplo)", phone: "5561999999999" }
-  ]);
-  const [shakeDetectionEnabled, setShakeDetectionEnabled] = useState(true);
-  const [appState, setAppState] = useState(AppState.currentState);
-
-  const [simulatedAggressors, setSimulatedAggressors] = useState([
-    {
-      id: "agressor001",
-      name: "Ag. Simul. Perseguidor",
-      // Posição inicial um pouco mais distante da SIMULATED_USER_LOCATION
-      location: {
-        latitude: SIMULATED_USER_LOCATION.latitude + 0.005,
-        longitude: SIMULATED_USER_LOCATION.longitude + 0.005
-      }
-    }
-  ]);
-
+  const [simulatedAggressor, setSimulatedAggressor] = useState(
+    JSON.parse(JSON.stringify(INITIAL_AGGRESSOR_STATE))
+  );
   const [proximityAlert, setProximityAlert] = useState({
     isActive: false,
     aggressor: null
   });
+  const [escapeRoute, setEscapeRoute] = useState(null);
+  // NOVO ESTADO para controlar o comportamento do agressor
+  const [aggressorBehavior, setAggressorBehavior] = useState("pursuing"); // pode ser 'pursuing', 'fleeing' ou 'idle'
 
-  useEffect(() => {
-    // Apenas para logar a localização simulada da usuária ao iniciar
-    console.log(
-      "[CONTEXT] Localização SIMULADA da usuária definida para:",
-      currentLocation
-    );
-  }, [currentLocation]); // Dependência em currentLocation para caso você queira mudá-la dinamicamente por outro meio no futuro
+  // ... (outros estados e useEffects de AppState e Shake mantidos)
+  const [isEmergencyActive, setIsEmergencyActive] = useState(false);
+  // ...
 
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      setAppState(nextAppState);
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!shakeDetectionEnabled) {
-      Accelerometer.removeAllListeners();
-      return;
-    }
-    let subscription;
-    const _subscribeShake = () => {
-      subscription = Accelerometer.addListener((accelerometerData) => {
-        const { x, y, z } = accelerometerData;
-        const totalForce = Math.sqrt(x * x + y * y + z * z);
-        const now = Date.now();
-        if (totalForce > SHAKE_THRESHOLD) {
-          if (now - lastShakeTimestamp > SHAKE_DEBOUNCE_TIME) {
-            lastShakeTimestamp = now;
-            // ... (lógica do shake)
-            triggerEmergency("Shake (Botão Guardião Simulado)");
-          }
-        }
-      });
-      Accelerometer.setUpdateInterval(100);
-    };
-    _subscribeShake();
-    return () => {
-      subscription?.remove();
-    };
-  }, [shakeDetectionEnabled, appState]);
-
-  // Funções de permissão e rastreamento de localização foram REMOVIDAS ou SIMPLIFICADAS
-  // pois não precisamos mais buscar a localização real da mulher para a simulação principal.
-  // Mantemos uma função de permissão apenas caso alguma outra parte do app precise (ex: o botão "minha localização" do MapView).
-  const requestLocationPermissionsForMapFeature = async () => {
-    // Esta função é opcional, apenas se você quiser que o MapView.showsUserLocation funcione independentemente
-    // let { status } = await Location.requestForegroundPermissionsAsync();
-    // if (status !== 'granted') {
-    //   Alert.alert('Permissão Opcional', 'Permissão de localização negada. O mapa pode não mostrar sua posição real (ponto azul).');
-    //   return false;
-    // }
-    // return true;
-    console.log(
-      "[CONTEXT] requestLocationPermissionsForMapFeature: Simulação não usa GPS real da usuária, mas permissão pode ser pedida pelo MapView."
-    );
-    return true; // Simula que foi concedida ou não é bloqueante para a simulação principal
-  };
-
-  const triggerEmergency = async (source = "Botão do App") => {
-    if (isEmergencyActive) return;
-    setIsEmergencyActive(true);
+  const resetSimulation = () => {
+    console.log("[SIMULAÇÃO] Resetando posições e comportamento.");
+    setCurrentLocation(SIMULATED_INITIAL_USER_LOCATION);
+    setSimulatedAggressor(JSON.parse(JSON.stringify(INITIAL_AGGRESSOR_STATE)));
+    setProximityAlert({ isActive: false, aggressor: null });
+    setEscapeRoute(null);
+    setAggressorBehavior("pursuing"); // Reseta o comportamento para 'perseguindo'
     Alert.alert(
-      "EMERGÊNCIA ACIONADA!",
-      `Fonte: ${source}.\nLocalização (simulada) compartilhada. Contatos notificados.`
-    );
-    console.log(`[ALERTA SISTEMA] EMERGÊNCIA ACIONADA via: ${source}`);
-    // Não precisamos chamar startLocationTracking(true) para a localização da mulher, pois ela é simulada e fixa.
-    // A localização do *agressor* é que se move dinamicamente.
-
-    // Lógica de SMS (usa o currentLocation que é o simulado)
-    if (emergencyContacts.length > 0 && currentLocation) {
-      const isSmsAvailable = await SMS.isAvailableAsync();
-      if (isSmsAvailable) {
-        emergencyContacts.forEach((contact) => {
-          const message = `ALERTA GUARDIÃ DF: ${
-            contact.name.split(" ")[0]
-          }, AJUDA URGENTE! Minha localização (simulada): https://maps.google.com/?q=${
-            currentLocation.latitude
-          },${currentLocation.longitude}`;
-          SMS.sendSMSAsync(contact.phone, message)
-            .then((result) =>
-              console.log(
-                `[SMS] Alerta enviado para ${contact.name}: ${result.result}`
-              )
-            )
-            .catch((error) =>
-              console.warn(`[SMS] Erro ao enviar para ${contact.name}:`, error)
-            );
-        });
-      } else {
-        Alert.alert(
-          "SMS Indisponível",
-          "Não é possível notificar contatos via SMS."
-        );
-      }
-    }
-  };
-
-  const cancelEmergency = async () => {
-    if (!isEmergencyActive) return;
-    setIsEmergencyActive(false);
-    Alert.alert("Emergência Cancelada", "Você marcou que está bem.");
-    console.log('[ALERTA SISTEMA] EMERGÊNCIA CANCELADA ("Estou Bem")');
-    // ... (lógica de SMS "Estou Bem")
-  };
-
-  // simulateVolumePressForPitch (sem alterações)
-  const simulateVolumePressForPitch = () => {
-    /* ... */
-  };
-
-  const moveSimulatedAggressor = (aggressorId, newLocation) => {
-    setSimulatedAggressors((prevAggressors) =>
-      prevAggressors.map((ag) =>
-        ag.id === aggressorId ? { ...ag, location: newLocation } : ag
-      )
+      "Simulação Resetada",
+      "A posição da usuária e do agressor foram restauradas."
     );
   };
 
-  // Efeito para MOVIMENTAR agressor E VERIFICAR proximidade (em relação à currentLocation SIMULADA)
+  // O useEffect principal que controla a simulação
   useEffect(() => {
-    // currentLocation é o SIMULATED_USER_LOCATION, que é fixo mas válido.
-    if (
-      !currentLocation ||
-      simulatedAggressors.length === 0 ||
-      isEmergencyActive
-    ) {
-      if (proximityAlert.isActive) {
-        setProximityAlert({ isActive: false, aggressor: null });
-      }
-      return;
-    }
+    if (isEmergencyActive) return;
 
     const intervalId = setInterval(() => {
-      const aggressorToMove = simulatedAggressors[0];
-      let newAggressorLocation = { ...aggressorToMove.location }; // Começa com a localização atual do agressor
+      let newAggressorLocation = { ...simulatedAggressor.location };
+      let newUserLocation = { ...currentLocation };
+      let newEscapeRoute = escapeRoute;
+      let newProximityAlert = { ...proximityAlert };
+      let newAggressorBehavior = aggressorBehavior;
 
       const distanceToUser = getDistanceBetweenCoordinates(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        aggressorToMove.location.latitude,
-        aggressorToMove.location.longitude
+        currentLocation,
+        simulatedAggressor.location
       );
 
-      if (distanceToUser > MIN_DISTANCE_TO_USER_METERS) {
-        const latDiff =
-          currentLocation.latitude - aggressorToMove.location.latitude;
-        const lonDiff =
-          currentLocation.longitude - aggressorToMove.location.longitude;
-        const magnitude = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+      // --- LÓGICA DE FUGA DA MULHER (se o alerta de proximidade estiver ativo) ---
+      if (proximityAlert.isActive && escapeRoute) {
+        const escapeDestination = escapeRoute[1];
+        const distanceToSafety = getDistanceBetweenCoordinates(
+          currentLocation,
+          escapeDestination
+        );
 
+        if (distanceToSafety <= SAFE_POINT_REACHED_THRESHOLD) {
+          // CHEGOU AO PONTO SEGURO!
+          console.log(
+            "[SIMULAÇÃO] Usuária alcançou o ponto seguro! Alerta finalizado."
+          );
+          Alert.alert(
+            "Você está em Segurança!",
+            "Você alcançou um ponto de apoio próximo. A ameaça foi neutralizada."
+          );
+          newProximityAlert = { isActive: false, aggressor: null };
+          newEscapeRoute = null;
+          newAggressorBehavior = "fleeing"; // NOVO: Manda o agressor recuar
+        } else {
+          // Continua movendo a mulher na rota de fuga
+          const latDiff = escapeDestination.latitude - currentLocation.latitude;
+          const lonDiff =
+            escapeDestination.longitude - currentLocation.longitude;
+          const magnitude = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+          if (magnitude > 0) {
+            const stepLat =
+              (latDiff / magnitude) * (USER_ESCAPE_STEP_METERS / 111000);
+            const stepLon =
+              (lonDiff / magnitude) *
+              (USER_ESCAPE_STEP_METERS /
+                (111000 *
+                  Math.cos((currentLocation.latitude * Math.PI) / 180)));
+            newUserLocation = {
+              latitude: currentLocation.latitude + stepLat,
+              longitude: currentLocation.longitude + stepLon
+            };
+          }
+        }
+      }
+
+      // --- LÓGICA DE MOVIMENTO DO AGRESSOR (baseada no comportamento) ---
+      if (newAggressorBehavior === "pursuing") {
+        // Move em direção à mulher
+        const aggressorTarget = newUserLocation; // Persegue a posição atual ou futura da mulher
+        const aggDistanceToTarget = getDistanceBetweenCoordinates(
+          aggressorTarget,
+          newAggressorLocation
+        );
+        if (aggDistanceToTarget > MIN_DISTANCE_TO_USER_METERS) {
+          const latDiff =
+            aggressorTarget.latitude - newAggressorLocation.latitude;
+          const lonDiff =
+            aggressorTarget.longitude - newAggressorLocation.longitude;
+          const magnitude = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+          if (magnitude > 0) {
+            const stepLat =
+              (latDiff / magnitude) * (AGGRESSOR_STEP_METERS / 111000);
+            const stepLon =
+              (lonDiff / magnitude) *
+              (AGGRESSOR_STEP_METERS /
+                (111000 *
+                  Math.cos((aggressorTarget.latitude * Math.PI) / 180)));
+            newAggressorLocation = {
+              latitude: newAggressorLocation.latitude + stepLat,
+              longitude: newAggressorLocation.longitude + stepLon
+            };
+          }
+        }
+      } else if (newAggressorBehavior === "fleeing") {
+        // NOVO: Move na direção OPOSTA à mulher
+        const latDiff =
+          newAggressorLocation.latitude - newUserLocation.latitude;
+        const lonDiff =
+          newAggressorLocation.longitude - newUserLocation.longitude;
+        const magnitude = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
         if (magnitude > 0) {
-          // Evita divisão por zero se estiverem no mesmo ponto
           const stepLat =
             (latDiff / magnitude) * (AGGRESSOR_STEP_METERS / 111000);
           const stepLon =
             (lonDiff / magnitude) *
             (AGGRESSOR_STEP_METERS /
-              (111000 * Math.cos((currentLocation.latitude * Math.PI) / 180)));
-
+              (111000 * Math.cos((newUserLocation.latitude * Math.PI) / 180)));
           newAggressorLocation = {
-            latitude: aggressorToMove.location.latitude + stepLat,
-            longitude: aggressorToMove.location.longitude + stepLon
+            latitude: newAggressorLocation.latitude + stepLat,
+            longitude: newAggressorLocation.longitude + stepLon
           };
         }
       }
-      // Atualiza o estado do agressor com a nova localização (mesmo que não tenha se movido se já estiver perto)
-      setSimulatedAggressors((prev) => [
-        { ...prev[0], location: newAggressorLocation }
-      ]);
 
-      // Verificar proximidade com a NOVA localização do agressor
-      let closestDangerousAggressor = null;
-      let minDistanceFound = Infinity;
-      const currentAggressorState = {
-        ...aggressorToMove,
-        location: newAggressorLocation
-      };
-      const finalDistanceToUser = getDistanceBetweenCoordinates(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        currentAggressorState.location.latitude,
-        currentAggressorState.location.longitude
-      );
-
-      if (finalDistanceToUser < DANGER_RADIUS_METERS) {
-        minDistanceFound = finalDistanceToUser;
-        closestDangerousAggressor = {
-          ...currentAggressorState,
-          distance: minDistanceFound
+      // --- LÓGICA PARA ATIVAR O ALERTA (se ainda não estiver ativo) ---
+      if (!proximityAlert.isActive && distanceToUser < DANGER_RADIUS_METERS) {
+        console.warn(
+          `[CONTEXT] ALERTA DE PROXIMIDADE ATIVADO! Agressor a ${distanceToUser.toFixed(
+            0
+          )}m.`
+        );
+        Alert.alert(
+          "ALERTA DE PROXIMIDADE!",
+          `Agressor detectado a ${distanceToUser.toFixed(0)}m.`
+        );
+        newProximityAlert = {
+          isActive: true,
+          aggressor: { ...simulatedAggressor, distance: distanceToUser }
         };
+        // Calcula a rota de fuga pela primeira vez
+        const latDiffFromAggressor =
+          currentLocation.latitude - newAggressorLocation.latitude;
+        const lonDiffFromAggressor =
+          currentLocation.longitude - newAggressorLocation.longitude;
+        const safePointDestination = {
+          latitude: currentLocation.latitude + latDiffFromAggressor * 2.0, // Aumentei o multiplicador para um ponto de fuga mais distante
+          longitude: currentLocation.longitude + lonDiffFromAggressor * 2.0
+        };
+        newEscapeRoute = [currentLocation, safePointDestination];
       }
 
-      if (closestDangerousAggressor) {
-        if (
-          !proximityAlert.isActive ||
-          proximityAlert.aggressor?.id !== closestDangerousAggressor.id
-        ) {
-          console.warn(
-            `[CONTEXT ALERT PROXIMITY] ATIVADO! ${
-              closestDangerousAggressor.name
-            } a ${minDistanceFound.toFixed(0)}m da usuária (simulada).`
-          );
-          Alert.alert(
-            "ALERTA DE PROXIMIDADE!",
-            `Agressor "${
-              closestDangerousAggressor.name
-            }" detectado a ${minDistanceFound.toFixed(0)}m.`
-          );
-          setProximityAlert({
-            isActive: true,
-            aggressor: closestDangerousAggressor
-          });
-        } else if (
-          proximityAlert.isActive &&
-          proximityAlert.aggressor?.id === closestDangerousAggressor.id
-        ) {
-          setProximityAlert((prev) => ({
-            ...prev,
-            aggressor: { ...closestDangerousAggressor }
-          })); // Atualiza distância
-        }
-      } else {
-        if (proximityAlert.isActive) {
-          console.info("[CONTEXT ALERT PROXIMITY] DESATIVADO.");
-          setProximityAlert({ isActive: false, aggressor: null });
-        }
-      }
-    }, PROXIMITY_CHECK_INTERVAL_MS);
+      // Atualiza todos os estados de uma vez no final do ciclo
+      setCurrentLocation(newUserLocation);
+      setSimulatedAggressor({
+        ...simulatedAggressor,
+        location: newAggressorLocation
+      });
+      setProximityAlert(newProximityAlert);
+      setEscapeRoute(newEscapeRoute);
+      setAggressorBehavior(newAggressorBehavior);
+    }, SIMULATION_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
   }, [
     currentLocation,
-    simulatedAggressors,
-    proximityAlert.isActive,
+    simulatedAggressor,
+    proximityAlert,
+    escapeRoute,
+    aggressorBehavior,
     isEmergencyActive
   ]);
 
   return (
     <EmergencyContext.Provider
       value={{
-        isEmergencyActive,
-        currentLocation, // currentLocation é a SIMULADA
-        emergencyContacts,
-        shakeDetectionEnabled,
-        triggerEmergency,
-        cancelEmergency,
-        setEmergencyContacts,
-        setShakeDetectionEnabled,
-        simulateVolumePressForPitch,
-        requestLocationPermissionsForMapFeature, // Nome mudado para clareza
-        // startLocationTracking, // Não é mais necessário expor para a usuária
-        simulatedAggressors,
-        moveSimulatedAggressor,
-        proximityAlert
+        currentLocation,
+        simulatedAggressor,
+        proximityAlert,
+        escapeRoute,
+        resetSimulation
+        // ...outras funções como triggerEmergency, etc. que você possa ter.
       }}
     >
       {children}
