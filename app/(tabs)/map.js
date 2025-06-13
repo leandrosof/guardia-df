@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Switch
+  Switch,
+  ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, {
@@ -25,6 +26,8 @@ import GlobalStyles from "../../constants/GlobalStyles";
 import Icon from "../../components/Icon";
 import MapMarker from "../../components/MapMarker";
 import StyledButton from "../../components/StyledButton";
+import { HEATMAP_POINTS } from "../../utils/heatmap_points";
+import { generateInterpolatedPoints, limitPoints } from "../../utils/geo";
 
 const theme = Colors.light;
 const DANGER_RADIUS_METERS = 500;
@@ -33,54 +36,44 @@ const INITIAL_MOCK_POINTS = [
   {
     id: "safe_point_1",
     type: "safe",
-    coordinate: { latitude: -15.7815, longitude: -47.9305 },
+    coordinate: { latitude: -15.781, longitude: -47.9243 },
     title: "Comércio Seguro (Simulado)",
     description: "Ponto de apoio com movimento."
   },
   {
     id: "safe_point_2",
     type: "safe",
-    coordinate: { latitude: -15.779, longitude: -47.9275 },
+    coordinate: {
+      latitude: -15.778615273923979,
+      longitude: -47.92553499341011
+    },
+    title: "Posto Policial (Simulado)",
+    description: "Ponto de apoio policial."
+  },
+  {
+    id: "safe_point_3",
+    type: "safe",
+    coordinate: { latitude: -15.773993686198184, longitude: -47.9298959299922 },
+    title: "Posto Policial (Simulado)",
+    description: "Ponto de apoio policial."
+  },
+  {
+    id: "safe_point_4",
+    type: "safe",
+    coordinate: {
+      latitude: -15.77370201027587,
+      longitude: -47.92714264243841
+    },
     title: "Posto Policial (Simulado)",
     description: "Ponto de apoio policial."
   },
   {
     id: "risk_point_1",
     type: "risk",
-    coordinate: { latitude: -15.7788, longitude: -47.931 },
+    coordinate: { latitude: -15.784, longitude: -47.9244 },
     title: "Praça Mal Iluminada (Sim.)",
     description: "Área com relatos de incidentes."
   }
-];
-
-const HEATMAP_POINTS = [
-  { latitude: -15.78, longitude: -47.929, weight: 10 },
-  { latitude: -15.781, longitude: -47.928, weight: 8 },
-  { latitude: -15.779, longitude: -47.927, weight: 5 },
-  { latitude: -15.782, longitude: -47.93, weight: 7 },
-  { latitude: -15.778, longitude: -47.931, weight: 15 },
-  { latitude: -15.7785, longitude: -47.9315, weight: 12 },
-  { latitude: -15.7802, longitude: -47.9287, weight: 9 },
-  { latitude: -15.7811, longitude: -47.9302, weight: 6 },
-  { latitude: -15.7795, longitude: -47.9309, weight: 11 },
-  { latitude: -15.7807, longitude: -47.9298, weight: 8 },
-  { latitude: -15.7792, longitude: -47.9283, weight: 10 },
-  { latitude: -15.7808, longitude: -47.9279, weight: 7 },
-  { latitude: -15.7815, longitude: -47.9284, weight: 6 },
-  { latitude: -15.7779, longitude: -47.9302, weight: 13 },
-  { latitude: -15.7788, longitude: -47.9289, weight: 14 },
-  { latitude: -15.7819, longitude: -47.9295, weight: 5 },
-  { latitude: -15.7798, longitude: -47.9311, weight: 9 },
-  { latitude: -15.7783, longitude: -47.9304, weight: 12 },
-  { latitude: -15.7801, longitude: -47.9281, weight: 7 },
-  { latitude: -15.7813, longitude: -47.9278, weight: 6 },
-  { latitude: -15.7775, longitude: -47.9318, weight: 10 },
-  { latitude: -15.7786, longitude: -47.9307, weight: 11 }
-];
-
-const MOCK_POLICE_UNITS = [
-  { id: "viatura_1", coordinate: { latitude: -15.785, longitude: -47.925 } },
-  { id: "viatura_2", coordinate: { latitude: -15.775, longitude: -47.935 } }
 ];
 
 export default function MapScreen() {
@@ -102,6 +95,9 @@ export default function MapScreen() {
   const [points, setPoints] = useState(INITIAL_MOCK_POINTS);
   const [isAddingPoint, setIsAddingPoint] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [denseSafePoints, setDenseSafePoints] = useState([]);
+  const [isHeatmapDataLoading, setIsHeatmapDataLoading] = useState(true);
+
   const [newPointData, setNewPointData] = useState({
     coordinate: null,
     type: "risk",
@@ -111,7 +107,7 @@ export default function MapScreen() {
   const [mapType, setMapType] = useState("standard");
   const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
   const [viewMode, setViewMode] = useState("user");
-
+  console.log(newPointData);
   const toggleViewMode = () =>
     setViewMode((prev) => (prev === "user" ? "police" : "user"));
   const toggleMapType = () =>
@@ -167,6 +163,40 @@ export default function MapScreen() {
     viewMode
   ]);
 
+  // Seus arrays safePoints e riskPoints originais:
+  const SAFETY_THRESHOLD = 14;
+  const safePoints = useMemo(
+    () => HEATMAP_POINTS.filter((p) => p.weight <= SAFETY_THRESHOLD),
+    []
+  );
+  const riskPoints = useMemo(
+    () => HEATMAP_POINTS.filter((p) => p.weight > SAFETY_THRESHOLD),
+    []
+  );
+
+  useEffect(() => {
+    console.log("Iniciando cálculo pesado dos pontos do heatmap...");
+
+    // Pegamos os pontos seguros base (este cálculo é rápido)
+    const baseSafePoints = HEATMAP_POINTS.filter((p) => p.weight <= 13);
+
+    // Executamos a função pesada
+    const generatedPoints = generateInterpolatedPoints(baseSafePoints, 0.09, 5);
+
+    // Opcional: Limitamos se necessário
+    const finalPoints = limitPoints(generatedPoints, 15000);
+
+    // Salvamos o resultado final no nosso estado
+    setDenseSafePoints(finalPoints);
+
+    // Avisamos que o carregamento terminou
+    setIsHeatmapDataLoading(false);
+
+    console.log(
+      `Cálculo finalizado. Total de ${finalPoints.length} pontos gerados.`
+    );
+  }, []); // <-- O array vazio garante que isso rode SÓ UMA VEZ!
+
   return (
     <SafeAreaView
       style={[GlobalStyles.safeAreaContainer, styles.screen]}
@@ -187,16 +217,32 @@ export default function MapScreen() {
         mapPadding={{ bottom: 90 }}
       >
         {isHeatmapVisible && (
-          <Heatmap
-            points={HEATMAP_POINTS}
-            opacity={0.7}
-            radius={50}
-            gradient={{
-              colors: ["#79f279", "#f2f279", "#f27979"],
-              startPoints: [0.05, 0.4, 1.0],
-              colorMapSize: 256
-            }}
-          />
+          <>
+            {/* CAMADA 1: A GRANDE ÁREA SEGURA (VERDE) */}
+            <Heatmap
+              points={denseSafePoints}
+              opacity={0.5} // OPACIDADE BAIXA: para parecer uma camada de fundo, sem esconder o mapa.
+              radius={50} // RAIO GRANDE: para que os pontos se misturem e formem uma grande área verde.
+              gradient={{
+                // Usamos apenas tons de verde.
+                colors: ["rgba(121, 242, 121, 0)", "#79f279", "#00e600"],
+                startPoints: [0.1, 0.2, 0.4],
+                colorMapSize: 256
+              }}
+            />
+
+            {/* CAMADA 2: OS HOTSPOTS DE RISCO (VERMELHO) */}
+            <Heatmap
+              points={riskPoints}
+              opacity={0.8} // OPACIDADE ALTA: para que os alertas se destaquem sobre a área verde.
+              radius={35} // RAIO PEQUENO: para criar 'hotspots' de alerta bem definidos e localizados.
+              gradient={{
+                colors: ["#f2f279", "#f27979", "#ff0000"],
+                startPoints: [0.1, 0.5, 1.0],
+                colorMapSize: 256
+              }}
+            />
+          </>
         )}
 
         {viewMode === "user" && currentLocation && (
@@ -272,9 +318,8 @@ export default function MapScreen() {
             </Marker>
           ))}
 
-        {points.map((point) => (
-          <MapMarker key={point.id} pointData={point} />
-        ))}
+        {viewMode === "user" &&
+          points.map((point) => <MapMarker key={point.id} pointData={point} />)}
 
         {simulatedAggressor?.location && (
           <Marker
@@ -325,28 +370,6 @@ export default function MapScreen() {
       </MapView>
 
       <View style={styles.mapControlsContainer}>
-        <View style={styles.simulationControls}>
-          <TouchableOpacity
-            onPress={isSimulationRunning ? pauseSimulation : resumeSimulation}
-            style={styles.controlButton}
-          >
-            <Icon
-              name={isSimulationRunning ? "pause-circle" : "play-circle"}
-              size={Layout.iconSize.l + 10}
-              color={theme.primary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={resetSimulation}
-            style={styles.controlButton}
-          >
-            <Icon
-              name="refresh-circle"
-              size={Layout.iconSize.l + 10}
-              color={theme.mediumGrey}
-            />
-          </TouchableOpacity>
-        </View>
         <View style={styles.mapActionControls}>
           <TouchableOpacity
             onPress={toggleMapType}
@@ -378,11 +401,15 @@ export default function MapScreen() {
               isHeatmapVisible && styles.controlButtonActive
             ]}
           >
-            <Icon
-              name="flame-outline"
-              size={Layout.iconSize.l}
-              color={isHeatmapVisible ? theme.white : theme.primary}
-            />
+            {isHeatmapDataLoading ? (
+              <ActivityIndicator size="small" color={theme.primary} /> // Mostra um spinner
+            ) : (
+              <Icon
+                name="flame-outline"
+                size={Layout.iconSize.l}
+                color={isHeatmapVisible ? theme.white : theme.primary}
+              />
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={toggleViewMode}
@@ -392,6 +419,27 @@ export default function MapScreen() {
               name={viewMode === "user" ? "shield-outline" : "person-outline"}
               size={Layout.iconSize.l}
               color={theme.primary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={isSimulationRunning ? pauseSimulation : resumeSimulation}
+            style={styles.controlButton}
+          >
+            <Icon
+              name={isSimulationRunning ? "pause-circle" : "play-circle"}
+              size={Layout.iconSize.l}
+              color={theme.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={resetSimulation}
+            style={styles.controlButton}
+          >
+            <Icon
+              name="refresh-circle"
+              size={Layout.iconSize.l}
+              color={theme.mediumGrey}
             />
           </TouchableOpacity>
         </View>
@@ -528,10 +576,11 @@ const styles = StyleSheet.create({
   simulationControls: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 25,
-    padding: 4,
+    padding: 2,
     flexDirection: "row",
     alignItems: "center",
-    elevation: 5
+    elevation: 5,
+    width: 130
   },
   mapActionControls: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
@@ -540,7 +589,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     elevation: 5,
-    marginTop: Layout.spacing.s
+    marginTop: Layout.spacing.xxl
   },
   controlButton: { padding: 8 },
   controlButtonActive: { backgroundColor: theme.tint, borderRadius: 50 },

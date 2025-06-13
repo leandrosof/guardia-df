@@ -20,8 +20,8 @@ const INITIAL_AGGRESSOR_STATE = {
   id: "agressor001",
   name: "Ag. Simul. Perseguidor",
   location: {
-    latitude: SIMULATED_INITIAL_USER_LOCATION.latitude + 0.005,
-    longitude: SIMULATED_INITIAL_USER_LOCATION.longitude + 0.005
+    latitude: SIMULATED_INITIAL_USER_LOCATION.latitude + 0.004,
+    longitude: SIMULATED_INITIAL_USER_LOCATION.longitude + 0.004
   }
 };
 

@@ -1,4 +1,3 @@
-// app/(tabs)/_layout.js
 import React, { useEffect, useState } from "react";
 import { Tabs, useNavigation, useRouter } from "expo-router"; // useNavigation para setOptions
 import { View, Text, Platform, AppState } from "react-native"; // Adicionado AppState e Text
@@ -94,9 +93,9 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.background,
           borderTopColor: theme.borderColor,
-          height: Platform.OS === "ios" ? 90 : 70,
+          height: 85,
           paddingBottom:
-            Platform.OS === "ios" ? Layout.spacing.l : Layout.spacing.s,
+            Platform.OS === "ios" ? Layout.spacing.l : Layout.spacing.m,
           paddingTop: Layout.spacing.s
         },
         tabBarLabelStyle: {

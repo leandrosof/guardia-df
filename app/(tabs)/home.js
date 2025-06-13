@@ -1,4 +1,3 @@
-// app/(tabs)/home.js
 import React, { useEffect } from "react";
 import {
   View,
@@ -6,47 +5,112 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  TouchableOpacity
+  TouchableOpacity,
+  Linking
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; // Use edges se necessário
-import { useRouter } from "expo-router"; // Para navegação programática
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
-import { useEmergency } from "../../contexts/EmergencyContext"; // Ajuste o caminho
-import GlobalStyles from "../../constants/GlobalStyles"; // Ajuste o caminho
-import Colors from "../../constants/Colors"; // Ajuste o caminho
-import Typography from "../../constants/Typography"; // Ajuste o caminho
-import Layout from "../../constants/Layout"; // Ajuste o caminho
-import StyledButton from "../../components/StyledButton"; // Ajuste o caminho
-import Icon from "../../components/Icon"; // Ajuste o caminho
-import Card from "../../components/Card"; // Ajuste o caminho
+import { useEmergency } from "../../contexts/EmergencyContext";
+import GlobalStyles from "../../constants/GlobalStyles";
+import Colors from "../../constants/Colors";
+import Typography from "../../constants/Typography";
+import Layout from "../../constants/Layout";
+import Icon from "../../components/Icon";
+
+// Dados para os cards de ACESSO RÁPIDO com cores individuais
+const quickAccessData = [
+  {
+    id: "1",
+    title: "Ligue 180",
+    icon: "call",
+    color: "#34B3F1",
+    action: () => Linking.openURL("tel:180")
+  },
+  {
+    id: "5",
+    title: "Chamada de Vídeo",
+    icon: "videocam",
+    color: "#FF69B4",
+    action: () => console.log("Iniciar chamada de vídeo com a delegacia")
+  },
+  {
+    id: "2",
+    title: "Casa da Mulher",
+    icon: "home",
+    color: "#A076F9",
+    action: () =>
+      Linking.openURL(
+        "https://www.gov.br/mdh/pt-br/navegue-por-temas/politicas-para-mulheres/casa-da-mulher-brasileira"
+      )
+  },
+  {
+    id: "3",
+    title: "Apoio Legal",
+    icon: "shield",
+    color: "#F39C12",
+    action: () => console.log("Apoio Legal")
+  },
+  {
+    id: "4",
+    title: "WhatsApp Ajuda",
+    icon: "logo-whatsapp",
+    color: "#2ECC71",
+    action: () => Linking.openURL("https://wa.me/556196100180")
+  }
+];
+
+// Dados para a seção "Plano de Segurança" com cores individuais
+const safetyPlanData = [
+  {
+    id: "1",
+    text: "Monte um kit de emergência com documentos, dinheiro e chaves.",
+    icon: "briefcase",
+    color: "#A076F9"
+  },
+  {
+    id: "2",
+    text: "Memorize números de telefone importantes (família, amigos, 190).",
+    icon: "call",
+    color: "#34B3F1"
+  },
+  {
+    id: "3",
+    text: "Combine uma palavra ou sinal de segurança com alguém de confiança.",
+    icon: "key",
+    color: "#F39C12"
+  },
+  {
+    id: "4",
+    text: "Documente as agressões (fotos, datas) e guarde em local seguro.",
+    icon: "document-text",
+    color: "#FF69B4"
+  }
+];
 
 const theme = Colors.light;
 
 export default function HomeScreen() {
-  const router = useRouter(); // Hook de navegação do Expo Router
+  const router = useRouter();
   const {
     triggerEmergency,
-    simulateVolumePressForPitch,
     isEmergencyActive,
     requestPermissionsAndStartLocation
   } = useEmergency();
 
   useEffect(() => {
-    const requestPerms = async () => {
-      await requestPermissionsAndStartLocation();
-    };
-    requestPerms();
+    if (typeof requestPermissionsAndStartLocation === "function") {
+      requestPermissionsAndStartLocation();
+    }
   }, [requestPermissionsAndStartLocation]);
 
-  const handlePanicPress = () => {
+  const handleHelpPress = () => {
     if (!isEmergencyActive) {
-      triggerEmergency("Botão de Pânico no App");
-      // A navegação para /emergency é gerenciada pelo RootLayout
+      triggerEmergency("Botão de Ajuda no App");
     }
   };
 
   return (
-    // SafeAreaView pode ser gerenciado pelo _layout.(js|tsx) ou aqui com edges
     <SafeAreaView
       style={[
         GlobalStyles.safeAreaContainer,
@@ -55,150 +119,218 @@ export default function HomeScreen() {
       edges={["top", "left", "right"]}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Image
-            source={require("../../assets/icon.png")}
-            style={styles.logo}
-          />
-          <Text style={styles.appName}>Guardiã DF</Text>
-          <Text style={styles.slogan}>
-            Sua segurança, a um clique de distância.
-          </Text>
-        </View>
-
-        <Card style={styles.panicCard}>
-          <TouchableOpacity
-            style={styles.panicButton}
-            onPress={handlePanicPress}
-            activeOpacity={0.7}
-          >
-            <Icon
-              name="shield-checkmark"
-              size={Layout.iconSize.l * 2}
-              color={theme.white}
+        <View style={styles.mainContent}>
+          {/* --- CABEÇALHO --- */}
+          <View style={styles.header}>
+            <Image
+              source={require("../../assets/logo-global.png")}
+              style={styles.logo}
             />
-            <Text style={styles.panicButtonText}>ACIONAR PÂNICO</Text>
-          </TouchableOpacity>
-          <Text style={styles.panicInfo}>
-            Toque no escudo para alerta imediato. Sua localização será
-            compartilhada e contatos de emergência notificados.
-          </Text>
-        </Card>
+            <Text style={styles.slogan}>
+              Sua segurança, a um clique de distância.
+            </Text>
 
-        <Card style={styles.pitchDemoCard}>
-          <Text style={styles.pitchTitle}>Demonstração para o Pitch</Text>
-          <StyledButton
-            title="Simular 'Botão Guardião'"
-            onPress={simulateVolumePressForPitch}
-            variant="secondary"
-            iconLeft="bluetooth"
-            fullWidth
-          />
-          <Text style={styles.pitchInfo}>
-            Pressione para simular o acionamento discreto pelo Botão Guardião
-            físico (que ativaria o 'shake' do celular).
-          </Text>
-        </Card>
+            {/* --- BOTÃO DE AJUDA ACOLHEDOR --- */}
+            <TouchableOpacity
+              style={styles.helpButton}
+              onPress={handleHelpPress}
+              activeOpacity={0.8}
+            >
+              <Icon
+                name="shield-checkmark"
+                size={Layout.iconSize.l * 1.2}
+                color={theme.white}
+              />
+              <Text style={styles.helpButtonMainText}>PRECISA DE AJUDA?</Text>
+              <Text style={styles.helpButtonSubText}>
+                Toque para solicitar uma viatura
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.actionInfo}>
+              Sua localização será compartilhada e seus contatos de emergência
+              notificados.
+            </Text>
+          </View>
+
+          {/* --- SEÇÃO DE ACESSO RÁPIDO --- */}
+          <View style={styles.quickAccessSection}>
+            <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickAccessScroll}
+            >
+              {quickAccessData.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.quickAccessCard}
+                  onPress={item.action}
+                  activeOpacity={0.8}
+                >
+                  <Icon
+                    name={item.icon}
+                    size={Layout.iconSize.l}
+                    color={item.color}
+                  />
+                  <Text style={styles.quickAccessCardTitle}>{item.title}</Text>
+                  <Icon
+                    name="chevron-forward"
+                    size={Layout.iconSize.m}
+                    color={theme.mediumGrey}
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* --- SEÇÃO PLANO DE SEGURANÇA --- */}
+          <View style={styles.safetyPlanSection}>
+            <Text style={styles.sectionTitle}>Plano de Segurança</Text>
+            {safetyPlanData.map((item) => (
+              <View key={item.id} style={styles.planItem}>
+                <Icon
+                  name={item.icon}
+                  size={Layout.iconSize.m}
+                  color={item.color}
+                />
+                <Text style={styles.planText}>{item.text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// OS ESTILOS (styles) SÃO OS MESMOS DA HomeScreen.js ANTERIOR.
-// Copie e cole o objeto 'styles' da versão anterior aqui.
-// Certifique-se que os caminhos para assets, como require('../../../assets/icon.png'), estão corretos
-// com base na nova localização do arquivo (app/(tabs)/home.js).
-
+// --- ESTILOS ATUALIZADOS ---
 const styles = StyleSheet.create({
   scrollContainer: {
-    flexGrow: 1,
-    alignItems: "center",
-    paddingHorizontal: Layout.spacing.m,
-    paddingBottom: Layout.spacing.xl
+    flexGrow: 1
+  },
+  mainContent: {
+    paddingHorizontal: Layout.spacing.m
   },
   header: {
     alignItems: "center",
-    marginTop: Layout.spacing.s, // Reduzido, pois SafeAreaView já dá espaço no topo
-    marginBottom: Layout.spacing.l
+    backgroundColor: theme.white,
+    borderRadius: Layout.borderRadius.m,
+    padding: Layout.spacing.m,
+    marginBottom: Layout.spacing.xl,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+    marginTop: Layout.spacing.s
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     resizeMode: "contain",
-    marginBottom: Layout.spacing.m
-  },
-  appName: {
-    ...Typography.h1,
-    color: theme.primary,
-    fontWeight: "bold"
+    marginBottom: Layout.spacing.s
   },
   slogan: {
     ...Typography.body1,
     color: theme.mediumGrey,
-    marginTop: Layout.spacing.xs
+    textAlign: "center",
+    marginBottom: 10
   },
-  panicCard: {
+  actionContainer: {
     width: "100%",
     alignItems: "center",
-    backgroundColor: theme.tint,
-    paddingVertical: Layout.spacing.l
+    backgroundColor: theme.white,
+    padding: Layout.spacing.m,
+    borderRadius: Layout.borderRadius.m,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: Layout.spacing.xl
   },
-  panicButton: {
-    backgroundColor: theme.danger,
-    width: Layout.window.width * 0.5,
-    height: Layout.window.width * 0.5,
-    borderRadius: Layout.window.width * 0.25,
+  helpButton: {
+    backgroundColor: "#E63946", // Cor de destaque mais suave
+    width: "100%",
+    paddingVertical: Layout.spacing.m, // Reduzido para um botão menor
+    borderRadius: Layout.borderRadius.m,
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Layout.spacing.m,
-    elevation: 8,
-    shadowColor: theme.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4
+    elevation: 8
   },
-  panicButtonText: {
-    ...Typography.h4,
+  helpButtonMainText: {
+    ...Typography.h3,
     fontFamily: Typography.fontFamilyBold,
     color: theme.white,
-    marginTop: Layout.spacing.s,
-    textAlign: "center"
+    marginTop: Layout.spacing.m
   },
-  panicInfo: {
-    ...Typography.caption,
+  helpButtonSubText: {
+    ...Typography.body1,
     color: theme.white,
-    textAlign: "center",
-    paddingHorizontal: Layout.spacing.s
+    opacity: 0.9,
+    marginTop: Layout.spacing.xs
   },
-  pitchDemoCard: {
-    width: "100%",
-    marginTop: Layout.spacing.l,
-    alignItems: "center"
-  },
-  pitchTitle: {
-    ...Typography.h4,
-    color: theme.text,
-    marginBottom: Layout.spacing.m
-  },
-  pitchInfo: {
+  actionInfo: {
     ...Typography.caption,
     color: theme.mediumGrey,
     textAlign: "center",
-    marginTop: Layout.spacing.s
+    marginTop: Layout.spacing.m
   },
-  quickActions: {
+  sectionTitle: {
+    ...Typography.h4,
+    fontFamily: Typography.fontFamilyBold,
+    color: theme.text,
+    marginBottom: Layout.spacing.m
+  },
+  quickAccessSection: {
+    marginBottom: Layout.spacing.xl
+  },
+  safetyPlanSection: {
+    marginBottom: Layout.spacing.xxl
+  },
+  planItem: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginTop: Layout.spacing.xl
-  },
-  actionItem: {
     alignItems: "center",
-    padding: Layout.spacing.s
+    backgroundColor: theme.white,
+    padding: Layout.spacing.m,
+    borderRadius: Layout.borderRadius.m,
+    marginBottom: Layout.spacing.s
   },
-  actionText: {
-    ...Typography.caption,
-    color: theme.tint,
-    marginTop: Layout.spacing.xs
+  planText: {
+    ...Typography.body2,
+    color: theme.text,
+    marginLeft: Layout.spacing.m,
+    flexShrink: 1
+  },
+  quickAccessScroll: {
+    paddingLeft: 2,
+    paddingVertical: Layout.spacing.s
+  },
+  quickAccessCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: theme.white,
+    borderRadius: Layout.borderRadius.m,
+    paddingHorizontal: Layout.spacing.m,
+    paddingVertical: Layout.spacing.l,
+    width: Layout.window.width * 0.7,
+    marginRight: Layout.spacing.m,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4
+  },
+  quickAccessCardTitle: {
+    ...Typography.body1,
+    fontFamily: Typography.fontFamilyBold,
+    color: theme.text,
+    marginLeft: Layout.spacing.m,
+    flex: 1
   }
 });
