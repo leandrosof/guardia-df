@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,8 +17,6 @@ import MapView, {
   Polyline,
   Heatmap
 } from "react-native-maps";
-
-// Ajuste os caminhos conforme a sua estrutura de pastas
 import { useEmergency } from "../../contexts/EmergencyContext";
 import Colors from "../../constants/Colors";
 import Layout from "../../constants/Layout";
@@ -31,32 +29,30 @@ import StyledButton from "../../components/StyledButton";
 const theme = Colors.light;
 const DANGER_RADIUS_METERS = 500;
 
-// Lista de pontos de interesse FIXOS e PRÓXIMOS da simulação para a demo
 const INITIAL_MOCK_POINTS = [
   {
     id: "safe_point_1",
     type: "safe",
-    coordinate: { latitude: -15.7815, longitude: -47.9305 }, // Sudoeste
+    coordinate: { latitude: -15.7815, longitude: -47.9305 },
     title: "Comércio Seguro (Simulado)",
     description: "Ponto de apoio com movimento."
   },
   {
     id: "safe_point_2",
     type: "safe",
-    coordinate: { latitude: -15.779, longitude: -47.9275 }, // Nordeste
+    coordinate: { latitude: -15.779, longitude: -47.9275 },
     title: "Posto Policial (Simulado)",
     description: "Ponto de apoio policial."
   },
   {
     id: "risk_point_1",
     type: "risk",
-    coordinate: { latitude: -15.7788, longitude: -47.931 }, // Noroeste
+    coordinate: { latitude: -15.7788, longitude: -47.931 },
     title: "Praça Mal Iluminada (Sim.)",
     description: "Área com relatos de incidentes."
   }
 ];
 
-// Dados simulados para o Mapa de Calor
 const HEATMAP_POINTS = [
   { latitude: -15.78, longitude: -47.929, weight: 10 },
   { latitude: -15.781, longitude: -47.928, weight: 8 },
@@ -64,17 +60,38 @@ const HEATMAP_POINTS = [
   { latitude: -15.782, longitude: -47.93, weight: 7 },
   { latitude: -15.778, longitude: -47.931, weight: 15 },
   { latitude: -15.7785, longitude: -47.9315, weight: 12 },
-  { latitude: -15.779, longitude: -47.93, weight: 9 },
-  { latitude: -15.79, longitude: -47.925, weight: 3 },
-  { latitude: -15.775, longitude: -47.92, weight: 2 }
+  { latitude: -15.7802, longitude: -47.9287, weight: 9 },
+  { latitude: -15.7811, longitude: -47.9302, weight: 6 },
+  { latitude: -15.7795, longitude: -47.9309, weight: 11 },
+  { latitude: -15.7807, longitude: -47.9298, weight: 8 },
+  { latitude: -15.7792, longitude: -47.9283, weight: 10 },
+  { latitude: -15.7808, longitude: -47.9279, weight: 7 },
+  { latitude: -15.7815, longitude: -47.9284, weight: 6 },
+  { latitude: -15.7779, longitude: -47.9302, weight: 13 },
+  { latitude: -15.7788, longitude: -47.9289, weight: 14 },
+  { latitude: -15.7819, longitude: -47.9295, weight: 5 },
+  { latitude: -15.7798, longitude: -47.9311, weight: 9 },
+  { latitude: -15.7783, longitude: -47.9304, weight: 12 },
+  { latitude: -15.7801, longitude: -47.9281, weight: 7 },
+  { latitude: -15.7813, longitude: -47.9278, weight: 6 },
+  { latitude: -15.7775, longitude: -47.9318, weight: 10 },
+  { latitude: -15.7786, longitude: -47.9307, weight: 11 }
+];
+
+const MOCK_POLICE_UNITS = [
+  { id: "viatura_1", coordinate: { latitude: -15.785, longitude: -47.925 } },
+  { id: "viatura_2", coordinate: { latitude: -15.775, longitude: -47.935 } }
 ];
 
 export default function MapScreen() {
   const {
     currentLocation,
     simulatedAggressor,
+    policeUnits,
     proximityAlert,
     escapeRoute,
+    dispatchRoute,
+    interceptRoute,
     isSimulationRunning,
     pauseSimulation,
     resumeSimulation,
@@ -82,7 +99,6 @@ export default function MapScreen() {
   } = useEmergency();
 
   const mapRef = useRef(null);
-
   const [points, setPoints] = useState(INITIAL_MOCK_POINTS);
   const [isAddingPoint, setIsAddingPoint] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -94,33 +110,25 @@ export default function MapScreen() {
   });
   const [mapType, setMapType] = useState("standard");
   const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
+  const [viewMode, setViewMode] = useState("user");
 
-  const toggleMapType = () => {
-    setMapType((prevType) =>
-      prevType === "standard" ? "satellite" : "standard"
-    );
-  };
-
+  const toggleViewMode = () =>
+    setViewMode((prev) => (prev === "user" ? "police" : "user"));
+  const toggleMapType = () =>
+    setMapType((prev) => (prev === "standard" ? "satellite" : "standard"));
   const toggleHeatmapVisibility = () => setIsHeatmapVisible((prev) => !prev);
-
   const handleMapPress = (event) => {
-    if (!isAddingPoint) return;
-    const { coordinate } = event.nativeEvent;
-    setNewPointData({ ...newPointData, coordinate });
-    setModalVisible(true);
-    setIsAddingPoint(false);
-  };
-
-  const handleSaveNewPoint = () => {
-    if (!newPointData.title || !newPointData.coordinate) {
-      alert("Por favor, preencha o título do ponto.");
-      return;
+    if (isAddingPoint) {
+      const { coordinate } = event.nativeEvent;
+      setNewPointData({ ...newPointData, coordinate });
+      setModalVisible(true);
+      setIsAddingPoint(false);
     }
-    const newPoint = {
-      ...newPointData,
-      id: `user_point_${Date.now()}`
-    };
-    setPoints((prevPoints) => [...prevPoints, newPoint]);
+  };
+  const handleSaveNewPoint = () => {
+    if (!newPointData.title) return;
+    const newPoint = { ...newPointData, id: `user_point_${Date.now()}` };
+    setPoints((p) => [...p, newPoint]);
     setModalVisible(false);
     setNewPointData({
       coordinate: null,
@@ -131,18 +139,20 @@ export default function MapScreen() {
   };
 
   useEffect(() => {
-    if (!mapRef.current || !currentLocation || !simulatedAggressor?.location) {
+    if (!mapRef.current || !currentLocation || !simulatedAggressor?.location)
       return;
+
+    let coordsToFit = [currentLocation, simulatedAggressor.location];
+    if (viewMode === "police" && policeUnits) {
+      coordsToFit.push(...policeUnits.map((u) => u.coordinate));
     }
-    if (!isSimulationRunning || !proximityAlert.isActive) {
-      mapRef.current.fitToCoordinates(
-        [currentLocation, simulatedAggressor.location],
-        {
-          edgePadding: { top: 150, right: 80, bottom: 200, left: 80 },
-          animated: true
-        }
-      );
-    } else if (proximityAlert.isActive) {
+
+    if (!isSimulationRunning || viewMode === "police") {
+      mapRef.current.fitToCoordinates(coordsToFit, {
+        edgePadding: { top: 150, right: 80, bottom: 200, left: 80 },
+        animated: true
+      });
+    } else if (viewMode === "user" && proximityAlert.isActive) {
       mapRef.current.animateToRegion(
         { ...currentLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 },
         500
@@ -151,8 +161,10 @@ export default function MapScreen() {
   }, [
     currentLocation,
     simulatedAggressor?.location,
+    policeUnits,
     isSimulationRunning,
-    proximityAlert.isActive
+    proximityAlert.isActive,
+    viewMode
   ]);
 
   return (
@@ -168,28 +180,26 @@ export default function MapScreen() {
           latitudeDelta: 0.02,
           longitudeDelta: 0.015
         }}
+        mapType={mapType}
+        onPress={handleMapPress}
         showsUserLocation={false}
         showsMyLocationButton={false}
         mapPadding={{ bottom: 90 }}
-        mapType={mapType}
-        onPress={handleMapPress}
       >
-        {/* Camada de Mapa de Calor */}
         {isHeatmapVisible && (
           <Heatmap
             points={HEATMAP_POINTS}
             opacity={0.7}
             radius={50}
             gradient={{
-              colors: ["#79f279", "#f2f279", "#f27979"], // Verde, Amarelo, Vermelho
+              colors: ["#79f279", "#f2f279", "#f27979"],
               startPoints: [0.05, 0.4, 1.0],
               colorMapSize: 256
             }}
           />
         )}
 
-        {/* Círculo de Proximidade */}
-        {currentLocation && (
+        {viewMode === "user" && currentLocation && (
           <Circle
             center={currentLocation}
             radius={DANGER_RADIUS_METERS}
@@ -204,22 +214,68 @@ export default function MapScreen() {
           />
         )}
 
-        {/* Rota de Fuga */}
-        {escapeRoute && (
+        {viewMode === "user" && escapeRoute && escapeRoute.length > 1 && (
           <Polyline
             coordinates={escapeRoute}
             strokeColor={theme.tint}
-            strokeWidth={7}
+            strokeWidth={8}
             zIndex={150}
+            lineDashPattern={[10, 5]}
           />
         )}
 
-        {/* Pontos de Interesse */}
+        {viewMode === "user" && escapeRoute && escapeRoute.length > 1 && (
+          <Marker coordinate={escapeRoute[escapeRoute.length - 1]} zIndex={190}>
+            <Icon
+              name="shield-checkmark-sharp"
+              size={Layout.iconSize.l + 10}
+              color={theme.success}
+            />
+            <Callout>
+              <Text style={styles.calloutTitle}>Ponto Seguro</Text>
+            </Callout>
+          </Marker>
+        )}
+
+        {viewMode === "police" && dispatchRoute && dispatchRoute.length > 1 && (
+          <Polyline
+            coordinates={dispatchRoute}
+            strokeColor={Colors.light.securityBlue || "blue"}
+            strokeWidth={6}
+            zIndex={140}
+          />
+        )}
+
+        {viewMode === "police" &&
+          interceptRoute &&
+          interceptRoute.length > 1 && (
+            <Polyline
+              coordinates={interceptRoute}
+              strokeColor={theme.danger}
+              strokeWidth={6}
+              lineDashPattern={[25, 10]}
+              zIndex={145}
+            />
+          )}
+
+        {viewMode === "police" &&
+          policeUnits?.map((unit) => (
+            <Marker key={unit.id} coordinate={unit.coordinate} zIndex={90}>
+              <Icon
+                name="car-sport-sharp"
+                size={Layout.iconSize.l + 8}
+                color={Colors.light.securityBlue || "blue"}
+              />
+              <Callout>
+                <Text>Viatura</Text>
+              </Callout>
+            </Marker>
+          ))}
+
         {points.map((point) => (
           <MapMarker key={point.id} pointData={point} />
         ))}
 
-        {/* Marcadores e Destino da Rota */}
         {simulatedAggressor?.location && (
           <Marker
             key={simulatedAggressor.id}
@@ -241,34 +297,33 @@ export default function MapScreen() {
             </Callout>
           </Marker>
         )}
+
         {currentLocation && (
           <Marker coordinate={currentLocation} zIndex={200}>
             <Icon
-              name="woman-sharp"
+              name={
+                viewMode === "police" && proximityAlert.isActive
+                  ? "alert-circle"
+                  : "woman-sharp"
+              }
               size={Layout.iconSize.l + 5}
               color={theme.white}
-              style={styles.userIcon}
+              style={[
+                styles.userIcon,
+                viewMode === "police" &&
+                  proximityAlert.isActive &&
+                  styles.userAsAlertIcon
+              ]}
             />
             <Callout>
-              <Text style={styles.calloutTitle}>Você</Text>
-            </Callout>
-          </Marker>
-        )}
-        {escapeRoute && (
-          <Marker coordinate={escapeRoute[1]} zIndex={190}>
-            <Icon
-              name="shield-checkmark-sharp"
-              size={Layout.iconSize.l + 10}
-              color={theme.success}
-            />
-            <Callout>
-              <Text style={styles.calloutTitle}>Ponto Seguro</Text>
+              <Text style={styles.calloutTitle}>
+                {viewMode === "police" ? "Vítima" : "Você"}
+              </Text>
             </Callout>
           </Marker>
         )}
       </MapView>
 
-      {/* Controles do Mapa e Simulação */}
       <View style={styles.mapControlsContainer}>
         <View style={styles.simulationControls}>
           <TouchableOpacity
@@ -329,45 +384,25 @@ export default function MapScreen() {
               color={isHeatmapVisible ? theme.white : theme.primary}
             />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={toggleViewMode}
+            style={styles.controlButton}
+          >
+            <Icon
+              name={viewMode === "user" ? "shield-outline" : "person-outline"}
+              size={Layout.iconSize.l}
+              color={theme.primary}
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <Icon
-            name="woman-sharp"
-            size={Layout.iconSize.m}
-            color={theme.tint}
-          />
-          <Text style={styles.legendText}>Você</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <Icon
-            name="shield-checkmark-sharp"
-            size={Layout.iconSize.m}
-            color={theme.success}
-          />
-          <Text style={styles.legendText}>Seguro</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <Icon
-            name="warning-sharp"
-            size={Layout.iconSize.m}
-            color={theme.danger}
-          />
-          <Text style={styles.legendText}>Risco</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <Icon
-            name="skull-sharp"
-            size={Layout.iconSize.m}
-            color={theme.black}
-          />
-          <Text style={styles.legendText}>Agressor</Text>
-        </View>
+        <Text style={styles.viewModeTitle}>
+          {viewMode === "user" ? "VISÃO DA USUÁRIA" : "VISÃO DA POLÍCIA"}
+        </Text>
       </View>
 
-      {/* Modal para Adicionar Ponto */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -458,6 +493,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.white
   },
+  userAsAlertIcon: { backgroundColor: theme.danger },
   normalAggressorIcon: {},
   alertAggressorIcon: {
     backgroundColor: theme.danger,
@@ -473,14 +509,16 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     backgroundColor: "rgba(255,255,255,0.95)",
-    padding: 8,
+    padding: 12,
     borderRadius: 8,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center"
+    alignItems: "center",
+    elevation: 5
   },
-  legendItem: { flexDirection: "row", alignItems: "center" },
-  legendText: { ...Typography.caption, marginLeft: 4, fontSize: 10 },
+  viewModeTitle: {
+    ...Typography.body1,
+    fontFamily: Typography.fontFamilyBold,
+    color: theme.text
+  },
   mapControlsContainer: {
     position: "absolute",
     top: Platform.OS === "ios" ? 60 : 20,
@@ -493,11 +531,7 @@ const styles = StyleSheet.create({
     padding: 4,
     flexDirection: "row",
     alignItems: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84
+    elevation: 5
   },
   mapActionControls: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",

@@ -99,42 +99,6 @@ export default function HomeScreen() {
             físico (que ativaria o 'shake' do celular).
           </Text>
         </Card>
-
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => router.push("/(tabs)/map")}
-          >
-            <Icon
-              name="map-outline"
-              size={Layout.iconSize.l}
-              color={theme.tint}
-            />
-            <Text style={styles.actionText}>Mapa Seguro</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => router.push("/(tabs)/support")}
-          >
-            <Icon
-              name="help-buoy-outline"
-              size={Layout.iconSize.l}
-              color={theme.tint}
-            />
-            <Text style={styles.actionText}>Rede de Apoio</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => router.push("/(tabs)/settings")}
-          >
-            <Icon
-              name="settings-outline"
-              size={Layout.iconSize.l}
-              color={theme.tint}
-            />
-            <Text style={styles.actionText}>Configurações</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

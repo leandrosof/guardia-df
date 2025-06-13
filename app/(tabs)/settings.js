@@ -26,28 +26,17 @@ import Icon from "../../components/Icon"; // Ajuste o caminho
 const theme = Colors.light;
 
 export default function SettingsScreen() {
-  const {
-    emergencyContacts,
-    setEmergencyContacts,
-    shakeDetectionEnabled,
-    setShakeDetectionEnabled
-  } = useEmergency();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [shakeDetection, setShakeDetectionEnabled] = useState(false);
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
 
   const handleAddContact = () => {
-    if (name.trim() && phone.trim()) {
-      if (!/^\+?[0-9\s-()]{10,15}$/.test(phone.trim())) {
-        Alert.alert(
-          "Telefone Inválido",
-          "Por favor, insira um número de telefone válido (incluindo DDD, ex: +5561912345678)."
-        );
-        return;
-      }
+    if (name && phone) {
       setEmergencyContacts([
         ...emergencyContacts,
-        { id: Date.now().toString(), name: name.trim(), phone: phone.trim() }
+        { id: Date.now().toString(), name: name, phone: phone }
       ]);
       setName("");
       setPhone("");
@@ -205,17 +194,15 @@ export default function SettingsScreen() {
                     : Colors.light.tint
               }} // 50 é alpha
               thumbColor={
-                shakeDetectionEnabled
+                shakeDetection
                   ? Platform.OS === "android"
                     ? theme.tint
                     : theme.white
                   : theme.mediumGrey
               }
               ios_backgroundColor={theme.lightGrey}
-              onValueChange={() =>
-                setShakeDetectionEnabled((previousState) => !previousState)
-              }
-              value={shakeDetectionEnabled}
+              onValueChange={() => setShakeDetectionEnabled(!shakeDetection)}
+              value={shakeDetection}
               style={styles.switch}
             />
           </View>
@@ -240,7 +227,7 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.privacyRow}>
             <Icon
               name="information-circle-outline"
-              size={Layout.iconSizem}
+              size={Layout.iconSize.m}
               color={theme.text}
               style={styles.settingIcon}
             />
