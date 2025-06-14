@@ -1,4 +1,3 @@
-// app/(tabs)/settings.js
 import React, { useState } from "react";
 import {
   View,
@@ -12,16 +11,14 @@ import {
   Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { useEmergency } from "../../contexts/EmergencyContext"; // Ajuste o caminho
-import GlobalStyles from "../../constants/GlobalStyles"; // Ajuste o caminho
-import Colors from "../../constants/Colors"; // Ajuste o caminho
-import Typography from "../../constants/Typography"; // Ajuste o caminho
-import Layout from "../../constants/Layout"; // Ajuste o caminho
-import StyledButton from "../../components/StyledButton"; // Ajuste o caminho
-import InputField from "../../components/InputField"; // Ajuste o caminho
-import Card from "../../components/Card"; // Ajuste o caminho
-import Icon from "../../components/Icon"; // Ajuste o caminho
+import GlobalStyles from "../../constants/GlobalStyles";
+import Colors from "../../constants/Colors";
+import Typography from "../../constants/Typography";
+import Layout from "../../constants/Layout";
+import StyledButton from "../../components/StyledButton";
+import InputField from "../../components/InputField";
+import Card from "../../components/Card";
+import Icon from "../../components/Icon";
 
 const theme = Colors.light;
 
@@ -130,7 +127,7 @@ export default function SettingsScreen() {
                 onChangeText={setPhone}
                 placeholder="+55 (DDD) XXXXX-XXXX"
                 keyboardType="phone-pad"
-                textContentType="telephoneNumber" // Ajuda com preenchimento automático
+                textContentType="telephoneNumber"
               />
               <View style={styles.formButtons}>
                 <StyledButton
@@ -192,7 +189,7 @@ export default function SettingsScreen() {
                   Platform.OS === "android"
                     ? Colors.light.tint + "50"
                     : Colors.light.tint
-              }} // 50 é alpha
+              }}
               thumbColor={
                 shakeDetection
                   ? Platform.OS === "android"
@@ -244,8 +241,6 @@ export default function SettingsScreen() {
   );
 }
 
-// OS ESTILOS (styles) SÃO OS MESMOS DA SettingsScreen.js ANTERIOR.
-// Copie e cole o objeto 'styles' da versão anterior aqui, fazendo pequenos ajustes se necessário.
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -258,7 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Layout.spacing.s // Reduzido
+    marginBottom: Layout.spacing.s
   },
   sectionTitle: {
     ...Typography.h4,
@@ -285,7 +280,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: theme.borderColor,
-    marginLeft: Layout.iconSize.l + 10 + Layout.spacing.m // Alinhar com o início do texto do contato
+    marginLeft: Layout.iconSize.l + 10 + Layout.spacing.m
   },
   contactIcon: {
     marginRight: Layout.spacing.m
@@ -317,13 +312,13 @@ const styles = StyleSheet.create({
   },
   settingRow: {
     flexDirection: "row",
-    alignItems: "flex-start", // Para alinhar o switch com o topo do texto
+    alignItems: "flex-start",
     paddingVertical: Layout.spacing.s,
     justifyContent: "space-between"
   },
   settingIcon: {
     marginRight: Layout.spacing.m,
-    marginTop: Layout.spacing.xs // Pequeno ajuste para alinhar visualmente
+    marginTop: Layout.spacing.xs
   },
   settingTextContainer: {
     flex: 1,
@@ -340,10 +335,7 @@ const styles = StyleSheet.create({
     marginTop: Layout.spacing.xs,
     lineHeight: Typography.caption.lineHeight + 2
   },
-  switch: {
-    // O Switch pode precisar de ajustes de margin específicos por plataforma
-    // Se estiver usando um wrapper, estilize o wrapper
-  },
+  switch: {},
   privacyRow: {
     flexDirection: "row",
     alignItems: "center",

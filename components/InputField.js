@@ -1,4 +1,3 @@
-// components/InputField.js
 import React from "react";
 import { TextInput, View, Text, StyleSheet } from "react-native";
 import GlobalStyles from "../constants/GlobalStyles";
@@ -50,7 +49,7 @@ const InputField = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: Layout.spacing.xs // Reduzido, pois o input já tem margem
+    marginBottom: Layout.spacing.xs
   },
   label: {
     ...Typography.body2,
@@ -58,10 +57,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.xs,
     fontWeight: "500"
   },
-  input: {
-    // Estilo base já vem de GlobalStyles.input
-    // Adicionar estilos específicos se necessário
-  },
+  input: {},
   inputError: {
     borderColor: theme.danger
   },

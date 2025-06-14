@@ -250,9 +250,9 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.xl
   },
   helpButton: {
-    backgroundColor: "#E63946", // Cor de destaque mais suave
+    backgroundColor: "#E63946",
     width: "100%",
-    paddingVertical: Layout.spacing.m, // Reduzido para um botão menor
+    paddingVertical: Layout.spacing.m,
     borderRadius: Layout.borderRadius.m,
     flexDirection: "column",
     justifyContent: "center",

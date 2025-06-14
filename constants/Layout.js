@@ -1,4 +1,3 @@
-// constants/Layout.js
 import { Dimensions } from "react-native";
 
 const width = Dimensions.get("window").width;
@@ -22,8 +21,8 @@ export default {
     s: 4,
     m: 8,
     l: 16,
-    xl: 24, // Para botões arredondados, etc.
-    round: 50 // Para botões circulares
+    xl: 24,
+    round: 50
   },
   iconSize: {
     s: 18,

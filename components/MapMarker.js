@@ -7,7 +7,6 @@ import Typography from "../constants/Typography";
 
 const theme = Colors.light;
 
-// Garanta que está usando "export default"
 export default function MapMarker({ pointData }) {
   const { id, type, coordinate, title, description } = pointData;
   const isSafe = type === "safe";

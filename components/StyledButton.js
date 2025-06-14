@@ -1,4 +1,3 @@
-// components/StyledButton.js
 import React from "react";
 import {
   TouchableOpacity,
@@ -10,19 +9,19 @@ import {
 import Colors from "../constants/Colors";
 import Typography from "../constants/Typography";
 import Layout from "../constants/Layout";
-import Icon from "./Icon"; // Nosso componente Icon
+import Icon from "./Icon";
 
 const theme = Colors.light;
 
 const StyledButton = ({
   title,
   onPress,
-  variant = "primary", // 'primary', 'secondary', 'danger', 'success', 'outline', 'transparent'
-  size = "medium", // 'small', 'medium', 'large'
+  variant = "primary",
+  size = "medium",
   disabled = false,
   loading = false,
-  iconLeft, // nome do ícone para Ionicons
-  iconRight, // nome do ícone para Ionicons
+  iconLeft,
+  iconRight,
   style,
   textStyle,
   fullWidth = false
@@ -73,7 +72,7 @@ const StyledButton = ({
         base.backgroundColor = "transparent";
         textBase.color = theme.tint;
         break;
-      default: // primary
+      default:
         base.backgroundColor = theme.tint;
         textBase.color = theme.white;
         break;
@@ -131,19 +130,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: Layout.borderRadius.xl, // Mais arredondado
-    // paddingVertical: Layout.spacing.s + 2, // 10px (ajustado em getButtonStyles)
-    // paddingHorizontal: Layout.spacing.m, // 16px (ajustado em getButtonStyles)
+    borderRadius: Layout.borderRadius.xl,
     marginVertical: Layout.spacing.s
   },
   fullWidth: {
     width: "100%"
   },
   textBase: {
-    // fontSize: Typography.button.fontSize, (ajustado em getButtonStyles)
     fontFamily: Typography.button.fontFamily,
     textAlign: "center",
-    fontWeight: "bold" // Para garantir destaque
+    fontWeight: "bold"
   },
   contentWrapper: {
     flexDirection: "row",

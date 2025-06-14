@@ -1,4 +1,3 @@
-// app/emergency.js
 import React from "react";
 import {
   View,
@@ -7,14 +6,14 @@ import {
   ActivityIndicator,
   Platform
 } from "react-native";
-import { Stack } from "expo-router"; // Para configurar o header da Stack Screen
+import { Stack } from "expo-router";
 
-import { useEmergency } from "../contexts/EmergencyContext"; // Ajuste o caminho se necessário
-import Colors from "../constants/Colors"; // Ajuste o caminho
-import Typography from "../constants/Typography"; // Ajuste o caminho
-import Layout from "../constants/Layout"; // Ajuste o caminho
-import StyledButton from "../components/StyledButton"; // Ajuste o caminho
-import Icon from "../components/Icon"; // Ajuste o caminho
+import { useEmergency } from "../contexts/EmergencyContext";
+import Colors from "../constants/Colors";
+import Typography from "../constants/Typography";
+import Layout from "../constants/Layout";
+import StyledButton from "../components/StyledButton";
+import Icon from "../components/Icon";
 
 const theme = Colors.light;
 
@@ -26,9 +25,6 @@ export default function EmergencyScreen() {
     proximityAlert
   } = useEmergency();
 
-  // Se por algum motivo a emergência não estiver ativa mas esta tela for mostrada,
-  // poderia haver um redirecionamento, mas o _layout.js principal já cuida disso.
-  // Apenas para garantir que temos dados:
   const activeAlertSource = isEmergencyActive
     ? "PÂNICO"
     : proximityAlert.isActive
@@ -42,8 +38,7 @@ export default function EmergencyScreen() {
       : null;
 
   const handleCancelEmergency = () => {
-    cancelEmergency(); // Esta função já lida com isEmergencyActive = false
-    // O router.replace para '/(tabs)/home' é gerenciado pelo app/_layout.js
+    cancelEmergency();
   };
 
   return (
@@ -59,7 +54,7 @@ export default function EmergencyScreen() {
           headerTitleAlign: "center",
           headerStyle: { backgroundColor: theme.danger },
           headerTintColor: theme.white,
-          headerLeft: () => null, // Remove o botão de voltar padrão
+          headerLeft: () => null,
           gestureEnabled: false // Impede de fechar com gesto
         }}
       />
@@ -118,11 +113,6 @@ export default function EmergencyScreen() {
             size="large"
           />
         )}
-        {/* Se for só alerta de proximidade, o usuário pode decidir acionar o pânico ou não.
-            O alerta de proximidade em si é cancelado automaticamente se o agressor se afasta.
-            Ou podemos adicionar um botão "CIENTE DO ALERTA DE PROXIMIDADE" que apenas silencia este alerta específico
-            mas mantém o monitoramento. Para o protótipo, o cancelamento da emergência principal é o foco.
-        */}
       </View>
     </>
   );
@@ -134,14 +124,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Layout.spacing.l,
-    paddingBottom: Layout.spacing.xl, // Espaço para o botão
+    paddingBottom: Layout.spacing.xl,
     backgroundColor: theme.danger
   },
   mainIcon: {
     marginBottom: Layout.spacing.m
   },
   title: {
-    ...Typography.h1, // Mais destaque
+    ...Typography.h1,
     fontFamily: Typography.fontFamilyBold,
     color: theme.white,
     textAlign: "center",
@@ -152,7 +142,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     ...Typography.body1,
-    fontSize: 17, // Um pouco maior
+    fontSize: 17,
     lineHeight: Typography.body1.lineHeight + 6,
     color: theme.white,
     textAlign: "center",
@@ -170,12 +160,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.white,
     textAlign: "center",
-    marginBottom: Layout.spacing.xl + Layout.spacing.m, // Mais espaço antes do botão
+    marginBottom: Layout.spacing.xl + Layout.spacing.m,
     fontWeight: "500"
   },
   cancelButton: {
-    width: "100%", // Ocupar mais da largura
-    backgroundColor: theme.success, // Verde para o botão de cancelar
+    width: "100%",
+    backgroundColor: theme.success,
     borderColor: theme.white,
     borderWidth: 2
   },

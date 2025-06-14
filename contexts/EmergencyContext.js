@@ -395,7 +395,6 @@ export const EmergencyProvider = ({ children }) => {
     // Para a simulação, pausamos a perseguição para focar no pânico principal
     setIsEmergencyActive(true);
     setIsSimulationRunning(false);
-    // A navegação para a tela /emergency é gerenciada pelo _layout.js
   };
 
   const cancelEmergency = () => {

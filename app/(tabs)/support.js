@@ -6,18 +6,17 @@ import {
   StyleSheet,
   ScrollView,
   Linking,
-  Alert,
-  TouchableOpacity
+  Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import Colors from "../../constants/Colors"; // Ajuste o caminho
-import Typography from "../../constants/Typography"; // Ajuste o caminho
-import Layout from "../../constants/Layout"; // Ajuste o caminho
-import GlobalStyles from "../../constants/GlobalStyles"; // Ajuste o caminho
-import Card from "../../components/Card"; // Ajuste o caminho
-import Icon from "../../components/Icon"; // Ajuste o caminho
-import StyledButton from "../../components/StyledButton"; // Ajuste o caminho
+import Colors from "../../constants/Colors";
+import Typography from "../../constants/Typography";
+import Layout from "../../constants/Layout";
+import GlobalStyles from "../../constants/GlobalStyles";
+import Card from "../../components/Card";
+import Icon from "../../components/Icon";
+import StyledButton from "../../components/StyledButton";
 
 const theme = Colors.light;
 
@@ -202,7 +201,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.m
   },
   serviceCard: {
-    backgroundColor: theme.cardBackground, // Já definido no GlobalStyles.card, mas pode sobrescrever
+    backgroundColor: theme.cardBackground,
     padding: Layout.spacing.m
   },
   cardHeader: {
@@ -217,7 +216,7 @@ const styles = StyleSheet.create({
     ...Typography.body1,
     fontFamily: Typography.fontFamilyBold,
     color: theme.text,
-    flexShrink: 1 // Para quebrar linha se o nome for muito grande
+    flexShrink: 1
   },
   serviceDetail: {
     ...Typography.body2,
@@ -233,6 +232,6 @@ const styles = StyleSheet.create({
     marginTop: Layout.spacing.s
   },
   forumCard: {
-    backgroundColor: theme.lightGrey // Dar um destaque diferente
+    backgroundColor: theme.lightGrey
   }
 });

@@ -4,24 +4,24 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
-import { EmergencyProvider, useEmergency } from "../contexts/EmergencyContext"; // Ajuste o caminho se necessário
-import useCachedResources from "../hooks/useCachedResources"; // Ajuste o caminho
-import Colors from "../constants/Colors"; // Ajuste o caminho
+import { EmergencyProvider, useEmergency } from "../contexts/EmergencyContext";
+import useCachedResources from "../hooks/useCachedResources";
+import Colors from "../constants/Colors";
 
 const theme = Colors.light;
 
 function RootNavigation() {
   const router = useRouter();
-  const segments = useSegments(); // Para saber a rota atual
-  const { isEmergencyActive } = useEmergency(); // Obtém do contexto
+  const segments = useSegments();
+  const { isEmergencyActive } = useEmergency();
 
   useEffect(() => {
     const isInEmergencyScreen = segments.includes("emergency");
 
     if (isEmergencyActive && !isInEmergencyScreen) {
-      router.replace("/emergency"); // Navega para a tela de emergência
+      router.replace("/emergency");
     } else if (!isEmergencyActive && isInEmergencyScreen) {
-      router.replace("/(tabs)/home"); // Volta para home se a emergência for cancelada
+      router.replace("/(tabs)/home");
     }
   }, [isEmergencyActive, segments, router]);
 
@@ -31,8 +31,8 @@ function RootNavigation() {
       <Stack.Screen
         name="emergency"
         options={{
-          presentation: "modal", // Ou 'fullScreenModal'
-          gestureEnabled: false // Impedir de fechar a tela de emergência com gesto
+          presentation: "modal",
+          gestureEnabled: false
         }}
       />
     </Stack>
@@ -43,7 +43,7 @@ export default function RootLayout() {
   const isLoadingComplete = useCachedResources();
 
   if (!isLoadingComplete) {
-    return null; // Ou um componente de Splash Screen
+    return null;
   }
 
   return (

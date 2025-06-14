@@ -1,6 +1,4 @@
-// Se criar em utils/geo.js: export function getDistance(...)
-// Dentro do EmergencyContext.js ou importada:
-function getDistanceBetweenCoordinates(lat1, lon1, lat2, lon2) {
+export function getDistanceBetweenCoordinates(lat1, lon1, lat2, lon2) {
   // Retorna distância em metros
   const R = 6371e3; // Raio da Terra em metros
   const toRadians = (deg) => deg * (Math.PI / 180);

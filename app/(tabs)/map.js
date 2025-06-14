@@ -7,8 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Switch,
-  ActivityIndicator
+  Switch
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, {
@@ -240,9 +239,9 @@ export default function MapScreen() {
                   latitude: point.latitude,
                   longitude: point.longitude
                 }}
-                radius={point.radius} // raio maior para "misturar" os pontos
+                radius={point.radius}
                 strokeWidth={0}
-                fillColor="rgba(121, 242, 121, 0.3)" // verde claro e transparente
+                fillColor="rgba(121, 242, 121, 0.3)"
                 strokeColor="transparent"
               />
             ))}
@@ -255,9 +254,9 @@ export default function MapScreen() {
                   latitude: point.latitude,
                   longitude: point.longitude
                 }}
-                radius={point.radius} // raio menor para parecer um alerta localizado
+                radius={point.radius}
                 strokeWidth={0}
-                fillColor="rgba(255, 0, 0, 0.5)" // vermelho mais forte
+                fillColor="rgba(255, 0, 0, 0.5)"
                 strokeColor="transparent"
               />
             ))}

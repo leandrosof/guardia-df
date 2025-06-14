@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Tabs, useNavigation, useRouter } from "expo-router"; // useNavigation para setOptions
-import { View, Text, Platform, AppState } from "react-native"; // Adicionado AppState e Text
-import Icon from "../../components/Icon"; // Ajuste o caminho
-import Colors from "../../constants/Colors"; // Ajuste o caminho
-import Layout from "../../constants/Layout"; // Ajuste o caminho
-import Typography from "../../constants/Typography"; // Ajuste o caminho
-import { useEmergency } from "../../contexts/EmergencyContext"; // Ajuste o caminho
+import { Tabs, useNavigation, useRouter } from "expo-router";
+import { View, Text, Platform, AppState } from "react-native";
+import Icon from "../../components/Icon";
+import Colors from "../../constants/Colors";
+import Layout from "../../constants/Layout";
+import Typography from "../../constants/Typography";
+import { useEmergency } from "../../contexts/EmergencyContext";
 
 const theme = Colors.light;
 
@@ -103,9 +103,8 @@ export default function TabLayout() {
           fontSize: 11,
           fontWeight: "500"
         },
-        headerShown: false, // O header é mostrado e customizado pelo useEffect acima
-        headerTitleAlign: "center" // Default, mas pode ser sobrescrito pelo headerTitle customizado
-        // As opções de header (style, tintColor, title) são definidas dinamicamente pelo useEffect
+        headerShown: false,
+        headerTitleAlign: "center"
       })}
     >
       <Tabs.Screen name="home" options={{ title: "Início" }} />

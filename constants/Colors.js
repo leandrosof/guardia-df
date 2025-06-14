@@ -1,4 +1,3 @@
-// constants/Colors.js
 const tintColor = "#8A2BE2"; // Violeta Azulada (Roxo Guardiã)
 const primaryPurple = "#6A0DAD"; // Roxo mais escuro e forte
 const accentPink = "#FF69B4"; // Rosa choque para acentos vibrantes
@@ -45,7 +44,7 @@ export default {
     placeholderText: "#888888",
     white: "#FFFFFF",
     black: "#000000",
-    lightGrey: "#D3D3D3", // Pode precisar de ajustes para tema escuro
+    lightGrey: "#D3D3D3",
     mediumGrey: "#A9A9A9"
   }
 };

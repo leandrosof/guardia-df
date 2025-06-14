@@ -1,10 +1,9 @@
-// constants/GlobalStyles.js
 import { StyleSheet } from "react-native";
-import Colors from "./Colors"; // Usaremos o tema 'light' por padrão
+import Colors from "./Colors";
 import Typography from "./Typography";
 import Layout from "./Layout";
 
-const theme = Colors.light; // ou Colors[Appearance.getColorScheme() || 'light'];
+const theme = Colors.light;
 
 export default StyleSheet.create({
   container: {
@@ -14,12 +13,10 @@ export default StyleSheet.create({
     paddingVertical: Layout.spacing.l
   },
   safeAreaContainer: {
-    // Para usar com SafeAreaView
     flex: 1,
     backgroundColor: theme.background
   },
   contentContainer: {
-    // Para usar dentro de SafeAreaView ou ScrollView
     paddingHorizontal: Layout.spacing.m,
     paddingVertical: Layout.spacing.l
   },
@@ -50,8 +47,6 @@ export default StyleSheet.create({
     justifyContent: "center",
     alignItems: "center"
   },
-  // Mais estilos globais conforme necessário
-  // Ex: sombras, estilos de card específicos
   card: {
     backgroundColor: theme.cardBackground,
     borderRadius: Layout.borderRadius.m,
@@ -61,7 +56,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: Layout.borderRadius.s,
-    elevation: 3 // Para Android
+    elevation: 3
   },
   input: {
     ...Typography.body1,
@@ -70,10 +65,9 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderRadius: Layout.borderRadius.m,
     paddingHorizontal: Layout.spacing.m,
-    paddingVertical: Layout.spacing.s + Layout.spacing.xs, // 12
+    paddingVertical: Layout.spacing.s + Layout.spacing.xs,
     marginBottom: Layout.spacing.m,
     color: theme.text,
     width: 350
   }
-  // Adicione mais estilos conforme necessário
 });
