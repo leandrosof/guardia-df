@@ -72,7 +72,8 @@ export default StyleSheet.create({
     paddingHorizontal: Layout.spacing.m,
     paddingVertical: Layout.spacing.s + Layout.spacing.xs, // 12
     marginBottom: Layout.spacing.m,
-    color: theme.text
+    color: theme.text,
+    width: 350
   }
   // Adicione mais estilos conforme necessário
 });

@@ -27,53 +27,51 @@ import Icon from "../../components/Icon";
 import MapMarker from "../../components/MapMarker";
 import StyledButton from "../../components/StyledButton";
 import { HEATMAP_POINTS } from "../../utils/heatmap_points";
-import { generateInterpolatedPoints, limitPoints } from "../../utils/geo";
 
 const theme = Colors.light;
 const DANGER_RADIUS_METERS = 500;
 
-const INITIAL_MOCK_POINTS = [
-  {
-    id: "safe_point_1",
-    type: "safe",
-    coordinate: { latitude: -15.781, longitude: -47.9243 },
-    title: "Comércio Seguro (Simulado)",
-    description: "Ponto de apoio com movimento."
-  },
-  {
-    id: "safe_point_2",
-    type: "safe",
-    coordinate: {
-      latitude: -15.778615273923979,
-      longitude: -47.92553499341011
-    },
-    title: "Posto Policial (Simulado)",
-    description: "Ponto de apoio policial."
-  },
-  {
-    id: "safe_point_3",
-    type: "safe",
-    coordinate: { latitude: -15.773993686198184, longitude: -47.9298959299922 },
-    title: "Posto Policial (Simulado)",
-    description: "Ponto de apoio policial."
-  },
-  {
-    id: "safe_point_4",
-    type: "safe",
-    coordinate: {
-      latitude: -15.77370201027587,
-      longitude: -47.92714264243841
-    },
-    title: "Posto Policial (Simulado)",
-    description: "Ponto de apoio policial."
-  },
-  {
-    id: "risk_point_1",
-    type: "risk",
-    coordinate: { latitude: -15.784, longitude: -47.9244 },
-    title: "Praça Mal Iluminada (Sim.)",
-    description: "Área com relatos de incidentes."
-  }
+const safeTitles = [
+  "Base da Polícia Militar",
+  "Posto da Guarda Municipal",
+  "Hospital Público",
+  "Estação de Metrô Monitorada",
+  "Shopping Center com Segurança",
+  "Posto de Bombeiros",
+  "Universidade Federal",
+  "Delegacia de Polícia",
+  "Unidade de Saúde 24h",
+  "Câmara de Monitoramento Urbano"
+];
+
+const safeDescriptions = [
+  "Área vigiada constantemente por forças de segurança.",
+  "Local com presença frequente de viaturas policiais.",
+  "Zona com baixo índice de criminalidade.",
+  "Região com segurança patrimonial ativa.",
+  "Área pública com videomonitoramento e apoio à população."
+];
+
+const riskTitles = [
+  "Área com Alto Índice de Roubos",
+  "Região com Relatos de Assédio",
+  "Beco Pouco Iluminado",
+  "Travessa com Histórico de Crimes",
+  "Zona Crítica de Furtos",
+  "Ponto de Tráfico Recorrente",
+  "Local de Aglomeração Suspeita",
+  "Praça com Ocorrências Recentes",
+  "Caminho Isolado",
+  "Região de Baixa Iluminação"
+];
+
+const riskDescriptions = [
+  "Relatos recentes de furtos e assaltos.",
+  "Zona identificada com baixa segurança à noite.",
+  "Local perigoso para circulação individual.",
+  "Área com histórico de ocorrências policiais.",
+  "Região considerada insegura por moradores.",
+  "Ponto de alerta para pessoas desacompanhadas."
 ];
 
 export default function MapScreen() {
@@ -91,12 +89,62 @@ export default function MapScreen() {
     resetSimulation
   } = useEmergency();
 
+  const [isHeatmapSafe, setIsHeatmapSafe] = useState([]);
+  const [isHeatmapRisk, setIsHeatmapRisk] = useState([]);
+
+  const SAFETY_THRESHOLD = 14;
+
+  const safePoints = useMemo(() => {
+    return (HEATMAP_POINTS || []).filter((p) => p.weight <= SAFETY_THRESHOLD);
+  }, [HEATMAP_POINTS]);
+
+  const riskPoints = useMemo(() => {
+    return (HEATMAP_POINTS || []).filter((p) => p.weight > SAFETY_THRESHOLD);
+  }, [HEATMAP_POINTS]);
+
+  const INITIAL_MOCK_POINTS = useMemo(() => {
+    if (!safePoints || !riskPoints) return [];
+
+    const safe = safePoints.map((p, index) => ({
+      id: `safe_point_${index + 1}`,
+      type: "safe",
+      weight: p.weight,
+      coordinate: {
+        latitude: p.latitude,
+        longitude: p.longitude
+      },
+      radius: Math.floor(Math.random() * 500) + 100, // 100 a 600
+      latitude: p.latitude,
+      longitude: p.longitude,
+      title: safeTitles[index % safeTitles.length],
+      description: safeDescriptions[index % safeDescriptions.length]
+    }));
+
+    const risk = riskPoints.map((p, index) => ({
+      id: `risk_point_${index + 1}`,
+      type: "risk",
+      weight: p.weight,
+      radius: Math.floor(Math.random() * 100) + 20, // 20 a 120
+      coordinate: {
+        latitude: p.latitude,
+        longitude: p.longitude
+      },
+      latitude: p.latitude,
+      longitude: p.longitude,
+      title: riskTitles[index % riskTitles.length],
+      description: riskDescriptions[index % riskDescriptions.length]
+    }));
+
+    setIsHeatmapSafe(safe);
+    setIsHeatmapRisk(risk);
+
+    return [...safe, ...risk];
+  }, [safePoints, riskPoints]);
+
   const mapRef = useRef(null);
   const [points, setPoints] = useState(INITIAL_MOCK_POINTS);
   const [isAddingPoint, setIsAddingPoint] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [denseSafePoints, setDenseSafePoints] = useState([]);
-  const [isHeatmapDataLoading, setIsHeatmapDataLoading] = useState(true);
 
   const [newPointData, setNewPointData] = useState({
     coordinate: null,
@@ -163,40 +211,6 @@ export default function MapScreen() {
     viewMode
   ]);
 
-  // Seus arrays safePoints e riskPoints originais:
-  const SAFETY_THRESHOLD = 14;
-  const safePoints = useMemo(
-    () => HEATMAP_POINTS.filter((p) => p.weight <= SAFETY_THRESHOLD),
-    []
-  );
-  const riskPoints = useMemo(
-    () => HEATMAP_POINTS.filter((p) => p.weight > SAFETY_THRESHOLD),
-    []
-  );
-
-  useEffect(() => {
-    console.log("Iniciando cálculo pesado dos pontos do heatmap...");
-
-    // Pegamos os pontos seguros base (este cálculo é rápido)
-    const baseSafePoints = HEATMAP_POINTS.filter((p) => p.weight <= 13);
-
-    // Executamos a função pesada
-    const generatedPoints = generateInterpolatedPoints(baseSafePoints, 0.09, 5);
-
-    // Opcional: Limitamos se necessário
-    const finalPoints = limitPoints(generatedPoints, 15000);
-
-    // Salvamos o resultado final no nosso estado
-    setDenseSafePoints(finalPoints);
-
-    // Avisamos que o carregamento terminou
-    setIsHeatmapDataLoading(false);
-
-    console.log(
-      `Cálculo finalizado. Total de ${finalPoints.length} pontos gerados.`
-    );
-  }, []); // <-- O array vazio garante que isso rode SÓ UMA VEZ!
-
   return (
     <SafeAreaView
       style={[GlobalStyles.safeAreaContainer, styles.screen]}
@@ -219,33 +233,38 @@ export default function MapScreen() {
         {isHeatmapVisible && (
           <>
             {/* CAMADA 1: A GRANDE ÁREA SEGURA (VERDE) */}
-            <Heatmap
-              points={denseSafePoints}
-              opacity={0.5} // OPACIDADE BAIXA: para parecer uma camada de fundo, sem esconder o mapa.
-              radius={50} // RAIO GRANDE: para que os pontos se misturem e formem uma grande área verde.
-              gradient={{
-                // Usamos apenas tons de verde.
-                colors: ["rgba(121, 242, 121, 0)", "#79f279", "#00e600"],
-                startPoints: [0.1, 0.2, 0.4],
-                colorMapSize: 256
-              }}
-            />
+            {isHeatmapSafe?.map((point, index) => (
+              <Circle
+                key={`safe-${index}`}
+                center={{
+                  latitude: point.latitude,
+                  longitude: point.longitude
+                }}
+                radius={point.radius} // raio maior para "misturar" os pontos
+                strokeWidth={0}
+                fillColor="rgba(121, 242, 121, 0.3)" // verde claro e transparente
+                strokeColor="transparent"
+              />
+            ))}
 
             {/* CAMADA 2: OS HOTSPOTS DE RISCO (VERMELHO) */}
-            <Heatmap
-              points={riskPoints}
-              opacity={0.8} // OPACIDADE ALTA: para que os alertas se destaquem sobre a área verde.
-              radius={35} // RAIO PEQUENO: para criar 'hotspots' de alerta bem definidos e localizados.
-              gradient={{
-                colors: ["#f2f279", "#f27979", "#ff0000"],
-                startPoints: [0.1, 0.5, 1.0],
-                colorMapSize: 256
-              }}
-            />
+            {isHeatmapRisk?.map((point, index) => (
+              <Circle
+                key={`risk-${index}`}
+                center={{
+                  latitude: point.latitude,
+                  longitude: point.longitude
+                }}
+                radius={point.radius} // raio menor para parecer um alerta localizado
+                strokeWidth={0}
+                fillColor="rgba(255, 0, 0, 0.5)" // vermelho mais forte
+                strokeColor="transparent"
+              />
+            ))}
           </>
         )}
 
-        {viewMode === "user" && currentLocation && (
+        {viewMode === "user" && currentLocation && isSimulationRunning && (
           <Circle
             center={currentLocation}
             radius={DANGER_RADIUS_METERS}
@@ -321,7 +340,7 @@ export default function MapScreen() {
         {viewMode === "user" &&
           points.map((point) => <MapMarker key={point.id} pointData={point} />)}
 
-        {simulatedAggressor?.location && (
+        {isSimulationRunning && simulatedAggressor?.location && (
           <Marker
             key={simulatedAggressor.id}
             coordinate={simulatedAggressor.location}
@@ -394,6 +413,7 @@ export default function MapScreen() {
               color={isAddingPoint ? theme.white : theme.primary}
             />
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={toggleHeatmapVisibility}
             style={[
@@ -401,16 +421,13 @@ export default function MapScreen() {
               isHeatmapVisible && styles.controlButtonActive
             ]}
           >
-            {isHeatmapDataLoading ? (
-              <ActivityIndicator size="small" color={theme.primary} /> // Mostra um spinner
-            ) : (
-              <Icon
-                name="flame-outline"
-                size={Layout.iconSize.l}
-                color={isHeatmapVisible ? theme.white : theme.primary}
-              />
-            )}
+            <Icon
+              name="flame-outline"
+              size={Layout.iconSize.l}
+              color={isHeatmapVisible ? theme.white : theme.primary}
+            />
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={toggleViewMode}
             style={styles.controlButton}
@@ -537,8 +554,6 @@ const styles = StyleSheet.create({
   userIcon: {
     backgroundColor: theme.tint,
     borderRadius: 22,
-    padding: 5,
-    borderWidth: 2,
     borderColor: theme.white
   },
   userAsAlertIcon: { backgroundColor: theme.danger },
@@ -589,7 +604,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     elevation: 5,
-    marginTop: Layout.spacing.xxl
+    marginTop: Platform.OS === "ios" ? Layout.spacing.s : Layout.spacing.xxl
   },
   controlButton: { padding: 8 },
   controlButtonActive: { backgroundColor: theme.tint, borderRadius: 50 },
@@ -606,7 +621,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 25,
     alignItems: "center",
-    elevation: 5
+    elevation: 5,
+    marginBottom: 210
   },
   modalTitle: { ...Typography.h4, marginBottom: 15 },
   switchContainer: {
