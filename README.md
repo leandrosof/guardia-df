@@ -2,7 +2,6 @@
   <img src="https://i.imgur.com/QVSmAYM.png" width="200" alt="Logo Guardiã DF" />
 </p>
 
-<h1 align="center">Guardiã DF</h1>
 <p align="center"><strong>Tecnologia que protege. Apoio real, resposta rápida.</strong></p>
 
 ---
