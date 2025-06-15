@@ -16,15 +16,16 @@ Nosso objetivo é transformar o tempo entre o risco e a resposta em **prevençã
 
 ## 🚀 Tecnologias utilizadas
 
-- [Expo](https://expo.dev/)
+- [Expo SDK 53](https://expo.dev/)
 - React Native
-- JavaScript/TypeScript
+- JavaScript
 - `react-native-maps` + `expo-location`
 - **Projeto 100% Frontend**
-- Funcionalidades futuras:
-  - Validação por biometria facial
-  - Envio de alertas via WhatsApp (deep link)
-  - Botão físico de emergência via Bluetooth
+
+Funcionalidades futuras:
+- Validação por biometria facial
+- Envio de alertas via WhatsApp (deep link)
+- Botão físico de emergência via Bluetooth
 
 ---
 
@@ -59,6 +60,13 @@ Nosso objetivo é transformar o tempo entre o risco e a resposta em **prevençã
 ## 🛠️ Como rodar localmente
 
 1. Clone o repositório:
+
    ```bash
    git clone https://github.com/seu-usuario/guardia-df.git
    cd guardia-df
+
+2. Instale as dependências:
+
+- Instale as dependências: npm install
+- Instale o Expo CLI (caso ainda não tenha): npm install -g expo-cli
+- Inicie o servidor de desenvolvimento: npx expo start

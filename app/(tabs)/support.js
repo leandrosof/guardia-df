@@ -1,4 +1,3 @@
-// app/(tabs)/support.js
 import React from "react";
 import {
   View,

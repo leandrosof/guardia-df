@@ -1,4 +1,3 @@
-// app/_layout.js
 import React, { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";

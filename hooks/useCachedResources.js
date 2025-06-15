@@ -1,7 +1,6 @@
-// hooks/useCachedResources.js
 import { useEffect, useState } from "react";
 import * as Font from "expo-font";
-import { Ionicons } from "@expo/vector-icons"; // Carrega a fonte Ionicons
+import { Ionicons } from "@expo/vector-icons";
 
 export default function useCachedResources() {
   const [isLoadingComplete, setLoadingComplete] = useState(false);
@@ -11,10 +10,7 @@ export default function useCachedResources() {
       try {
         // Carregar fontes
         await Font.loadAsync({
-          ...Ionicons.font // Essencial para os ícones da TabNavigator
-          // 'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-          // 'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-          // 'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
+          ...Ionicons.font
         });
       } catch (e) {
         console.warn(e);
