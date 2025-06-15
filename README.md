@@ -67,6 +67,14 @@ Funcionalidades futuras:
 
 2. Instale as dependências:
 
-- Instale as dependências: npm install
-- Instale o Expo CLI (caso ainda não tenha): npm install -g expo-cli
-- Inicie o servidor de desenvolvimento: npx expo start
+- Instale as dependências: 
+
+    ```bash
+    npm install
+
+- Instale o Expo CLI (caso ainda não tenha): 
+    ```bash
+    npm install -g expo-cli
+- Inicie o servidor de desenvolvimento: 
+    ```bash
+    npx expo start
