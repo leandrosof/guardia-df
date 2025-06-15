@@ -65,14 +65,14 @@ Funcionalidades futuras:
    git clone https://github.com/seu-usuario/guardia-df.git
    cd guardia-df
 
-- Instale as dependências: 
+2. Instale as dependências: 
 
     ```bash
     npm install
 
-- Instale o Expo CLI (caso ainda não tenha): 
+3. Instale o Expo CLI (caso ainda não tenha): 
     ```bash
     npm install -g expo-cli
-- Inicie o servidor de desenvolvimento: 
+4. Inicie o servidor de desenvolvimento: 
     ```bash
     npx expo start
