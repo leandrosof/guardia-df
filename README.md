@@ -65,8 +65,6 @@ Funcionalidades futuras:
    git clone https://github.com/seu-usuario/guardia-df.git
    cd guardia-df
 
-2. Instale as dependências:
-
 - Instale as dependências: 
 
     ```bash
