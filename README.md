@@ -41,6 +41,7 @@ Funcionalidades futuras:
 ## 🧩 Funcionalidades principais
 
 - ✅ Cadastro acessível para qualquer mulher
+- 📊 Avaliação de Risco Personalizada: Ferramenta para a mulher avaliar sua situação e receber orientações específicas para sua segurança e busca de apoio.
 - 📍 Visualização da localização do agressor (futuramente, via tornozeleira eletrônica)
 - 🛣️ Rota de fuga manual ou automática até pontos seguros
 - 🔥 Mapa de calor com zonas de maior e menor risco
@@ -54,19 +55,6 @@ Funcionalidades futuras:
 - 💬 Envio automático de alerta com localização via WhatsApp (futuramente)
 - 🔒 Integração futura com botão físico Bluetooth (pulseira, chaveiro, etc.)
 - 📚 Conteúdo educativo sobre direitos, violência e como agir em caso de ameaça
-
----
-## 🚓 Chamado inteligente de viatura *(funcionalidade futura)*
-
-Ao registrar um **alerta de risco**, a usuária poderá **escolher se deseja acionar uma viatura imediatamente**.
-
-Esse acionamento funcionará de forma estratégica:
-
-- A viatura mais próxima e disponível será **notificada automaticamente**.
-- Caso todas as viaturas estejam ocupadas, o alerta **entrará em uma fila de ocorrências**, priorizada por **grau de risco e proximidade**.
-- A usuária poderá acompanhar em tempo real o **status do atendimento** (em andamento, aguardando ou finalizado).
-
-Essa funcionalidade visa garantir uma **resposta rápida, eficiente e integrada com os serviços de segurança pública**, ampliando a proteção no momento mais crítico.
 
 ---
 
