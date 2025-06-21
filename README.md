@@ -56,6 +56,19 @@ Funcionalidades futuras:
 - 📚 Conteúdo educativo sobre direitos, violência e como agir em caso de ameaça
 
 ---
+## 🚓 Chamado inteligente de viatura *(funcionalidade futura)*
+
+Ao registrar um **alerta de risco**, a usuária poderá **escolher se deseja acionar uma viatura imediatamente**.
+
+Esse acionamento funcionará de forma estratégica:
+
+- A viatura mais próxima e disponível será **notificada automaticamente**.
+- Caso todas as viaturas estejam ocupadas, o alerta **entrará em uma fila de ocorrências**, priorizada por **grau de risco e proximidade**.
+- A usuária poderá acompanhar em tempo real o **status do atendimento** (em andamento, aguardando ou finalizado).
+
+Essa funcionalidade visa garantir uma **resposta rápida, eficiente e integrada com os serviços de segurança pública**, ampliando a proteção no momento mais crítico.
+
+---
 
 ## 🛠️ Como rodar localmente
 
