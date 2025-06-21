@@ -41,7 +41,7 @@ Funcionalidades futuras:
 ## 🧩 Funcionalidades principais
 
 - ✅ Cadastro acessível para qualquer mulher
-- 📊 Avaliação de Risco Personalizada: Ferramenta para a mulher avaliar sua situação e receber orientações específicas para sua segurança e busca de apoio.
+- 📊 Avaliação de Risco Personalizada: Ferramenta para a mulher avaliar sua situação e receber orientações específicas para sua segurança e busca de apoio
 - 📍 Visualização da localização do agressor (futuramente, via tornozeleira eletrônica)
 - 🛣️ Rota de fuga manual ou automática até pontos seguros
 - 🔥 Mapa de calor com zonas de maior e menor risco
