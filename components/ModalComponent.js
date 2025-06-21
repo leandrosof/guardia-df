@@ -37,13 +37,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)"
   },
   modalContent: {
-    backgroundColor: Colors.light.background, // Usando cor da paleta
+    backgroundColor: Colors.light.background,
     borderRadius: 10,
     padding: 20,
     width: "90%",
     maxHeight: "90%",
     elevation: 5,
-    shadowColor: Colors.light.black, // Usando cor da paleta
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 20,
-    color: Colors.light.text // Usando cor da paleta
+    color: Colors.light.text
   },
   scrollViewContent: {
     paddingTop: 30

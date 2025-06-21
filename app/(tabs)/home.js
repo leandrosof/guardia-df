@@ -639,15 +639,12 @@ const styles = StyleSheet.create({
     marginLeft: Layout.spacing.m,
     flex: 1
   },
-  // Novos estilos para a exibição dos resultados do formulário
   formResultContainer: {
     backgroundColor: Colors.light.cardBackground,
     padding: 25,
     borderRadius: 10,
     borderWidth: 2,
     borderColor: Colors.light.tint
-    // Removido marginHorizontal para que o card preencha a modal
-    // Removido marginTop e marginBottom para que a modal gerencie o espaçamento
   },
   formResultTitle: {
     fontSize: 20,

@@ -1400,7 +1400,7 @@ const styles = StyleSheet.create({
     color: Colors.light.text
   },
   submitButton: {
-    backgroundColor: Colors.light.primary, // Usando a cor principal para o botão de submissão
+    backgroundColor: Colors.light.primary,
     padding: 15,
     borderRadius: 5,
     alignItems: "center",
