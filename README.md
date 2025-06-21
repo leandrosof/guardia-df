@@ -22,71 +22,81 @@ Nosso objetivo é transformar o tempo entre o risco e a resposta em **prevençã
 - `react-native-maps` + `expo-location`
 - **Projeto 100% Frontend**
 
-Funcionalidades futuras:
-- Validação por biometria facial
-- Envio de alertas via WhatsApp (deep link)
-- Botão físico de emergência via Bluetooth
+---
+
+## 🧩 Funcionalidades principais
+
+### ✅ Já implementadas:
+
+- Cadastro acessível para qualquer mulher
+- Avaliação de Risco Personalizada: ferramenta para a mulher avaliar sua situação e receber orientações específicas
+- Rota de fuga manual ou automática até pontos seguros
+- Mapa de calor com zonas de maior e menor risco
+- Marcação de pontos de risco (ruas escuras, locais perigosos) e pontos seguros (delegacias, batalhões, comércios)
+- Rede de apoio com:
+  - Delegacia da Mulher (DEAM)
+  - Assistência jurídica
+  - Atendimento psicossocial
+  - Abrigos temporários
+- Botão de pânico para acionar a viatura mais próxima (por geolocalização)
+- Conteúdo educativo sobre direitos, violência e como agir em caso de ameaça
+
+### 🔄 Funcionalidades futuras:
+
+- 📊 Integração com sistema judicial: identificação automática de mulheres com medida protetiva
+- 🔐 Verificação por biometria facial para ativar funcionalidades judiciais
+- 📍 Visualização da localização do agressor monitorado por tornozeleira eletrônica
+- 💬 Envio automático de alertas via WhatsApp (deep link)
+- 🔒 Integração com botão físico Bluetooth (pulseira, chaveiro etc.)
+- 🚓 Chamado inteligente de viatura com rastreamento de status e priorização por risco
 
 ---
 
 ## 🔐 Cadastro com inteligência planejada
 
-- O app permitirá cadastro de qualquer mulher.
-- Em futuras versões, se o CPF da usuária estiver vinculado a uma **medida protetiva**, o sistema fará a conexão com o agressor monitorado por tornozeleira.
-- Essa ativação será feita com **verificação por biometria facial** — para garantir que é a própria vítima que está acessando.
-- Usuárias sem vínculo judicial poderão usar normalmente todas as demais funcionalidades.
+O app permitirá o cadastro de qualquer mulher.
+
+Nas versões futuras:
+
+- Caso o CPF da usuária esteja vinculado a uma **medida protetiva**, o sistema conectará automaticamente com o agressor monitorado por tornozeleira.
+- A ativação dessa funcionalidade será feita com **verificação por biometria facial**, garantindo segurança e legitimidade no acesso.
+- Mulheres sem vínculo judicial poderão usar normalmente todas as funcionalidades não restritas.
 
 ---
 
-## 🧩 Funcionalidades principais
+## 🚓 Chamado inteligente de viatura *(futuro)*
 
-- ✅ Cadastro acessível para qualquer mulher
-- 📊 Avaliação de Risco Personalizada: Ferramenta para a mulher avaliar sua situação e receber orientações específicas para sua segurança e busca de apoio
-- 📍 Visualização da localização do agressor (futuramente, via tornozeleira eletrônica)
-- 🛣️ Rota de fuga manual ou automática até pontos seguros
-- 🔥 Mapa de calor com zonas de maior e menor risco
-- 📌 Marcação de pontos de risco (ruas escuras, locais perigosos) e pontos seguros (delegacias, batalhões, comércios)
-- 📞 Rede de apoio com:
-  - Delegacia da Mulher (DEAM)
-  - Assistência jurídica
-  - Atendimento psicossocial
-  - Abrigos temporários
-- 🚨 Botão de pânico para acionar a viatura mais próxima (por geolocalização)
-- 💬 Envio automático de alerta com localização via WhatsApp (futuramente)
-- 🔒 Integração futura com botão físico Bluetooth (pulseira, chaveiro, etc.)
-- 📚 Conteúdo educativo sobre direitos, violência e como agir em caso de ameaça
+Ao registrar um **alerta de risco**, a usuária poderá **optar por acionar uma viatura imediatamente**.
 
----
-
-## 🚓 Chamado inteligente de viatura *(funcionalidade futura)*
-
-Ao registrar um **alerta de risco**, a usuária poderá **escolher se deseja acionar uma viatura imediatamente**.
-
-Esse acionamento funcionará de forma estratégica:
+Funcionamento previsto:
 
 - A viatura mais próxima e disponível será **notificada automaticamente**.
-- Caso todas as viaturas estejam ocupadas, o alerta **entrará em uma fila de ocorrências**, priorizada por **grau de risco e proximidade**.
-- A usuária poderá acompanhar em tempo real o **status do atendimento** (em andamento, aguardando ou finalizado).
+- Se todas estiverem ocupadas, o alerta **entrará em uma fila priorizada** com base em **grau de risco e proximidade**.
+- A usuária poderá acompanhar o **status do atendimento em tempo real** (em andamento, aguardando ou finalizado).
 
-Essa funcionalidade visa garantir uma **resposta rápida, eficiente e integrada com os serviços de segurança pública**, ampliando a proteção no momento mais crítico.
+Essa funcionalidade garantirá uma **resposta eficiente, integrada e estratégica**, alinhada com os serviços públicos de segurança.
+
 ---
 
 ## 🛠️ Como rodar localmente
 
 1. Clone o repositório:
-
    ```bash
    git clone https://github.com/seu-usuario/guardia-df.git
    cd guardia-df
+   ```
 
-2. Instale as dependências: 
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-    ```bash
-    npm install
+3. Instale o Expo CLI (caso ainda não tenha):
+   ```bash
+   npm install -g expo-cli
+   ```
 
-3. Instale o Expo CLI (caso ainda não tenha): 
-    ```bash
-    npm install -g expo-cli
-4. Inicie o servidor de desenvolvimento: 
-    ```bash
-    npx expo start
+4. Inicie o servidor de desenvolvimento:
+   ```bash
+   npx expo start
+   ```
