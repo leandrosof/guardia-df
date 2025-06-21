@@ -64,7 +64,7 @@ Ao registrar um **alerta de risco**, a usuária poderá **escolher se deseja aci
 
 Esse acionamento funcionará de forma estratégica:
 
-- A viatura mais próxima e disponível será **notificada automaticamente**.Add commentMore actions
+- A viatura mais próxima e disponível será **notificada automaticamente**.
 - Caso todas as viaturas estejam ocupadas, o alerta **entrará em uma fila de ocorrências**, priorizada por **grau de risco e proximidade**.
 - A usuária poderá acompanhar em tempo real o **status do atendimento** (em andamento, aguardando ou finalizado).
 
