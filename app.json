@@ -2,6 +2,7 @@
   "expo": {
     "name": "guardia-df",
     "slug": "guardia-df",
+    "scheme": "guardiaDf",
     "version": "1.0.0",
     "plugins": [
       [
